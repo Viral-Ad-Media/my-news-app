@@ -1,61 +1,77 @@
-"use client"; // Mark as a Client Component
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { buildApiUrl, resolveApiAssetUrl } from "../../../lib/api";
+
+function normalizeImage(imagePath) {
+  if (!imagePath) return "/images/Placeholder.webp";
+  return resolveApiAssetUrl(imagePath);
+}
 
 export default function CategoryDetails({ params }) {
-  const { categoryId } = params; // Get 'categoryId' from 'params'
+  const { categoryId } = params;
   const [category, setCategory] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (categoryId) {
-      // Fetch category details
-      fetch(`https://newsapp-najw.onrender.com/api/categories/${categoryId}/`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log("Fetched Category Data:", data);
-          setCategory(data);
+    if (!categoryId) return undefined;
 
-          // Fetch articles based on IDs
-          const articleIds = data.articles;
-          if (articleIds && articleIds.length > 0) {
-            Promise.all(
-              articleIds.map((id) =>
-                fetch(`https://newsapp-najw.onrender.com/api/news/${id}/`).then((res) =>
-                  res.json()
-                )
-              )
-            )
-              .then((news) => {
-                console.log("Fetched news:", news);
-                setPosts(news);
-                setLoading(false);
-              })
-              .catch((error) => {
-                console.error("Error fetching news:", error);
-                setLoading(false);
-                setError("Failed to fetch news.");
-              });
-          } else {
-            setPosts([]);
-            setLoading(false);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching category details:", error);
-          setLoading(false);
-          setError("Failed to fetch category details.");
-        });
+    const controller = new AbortController();
+    const categoryUrl = buildApiUrl(`/categories/${categoryId}/`);
+
+    if (!categoryUrl) {
+      setError("API base URL is not configured.");
+      setLoading(false);
+      return () => controller.abort();
     }
+
+    const fetchData = async () => {
+      try {
+        const response = await fetch(categoryUrl, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const categoryData = await response.json();
+        setCategory(categoryData);
+
+        const articleIds = Array.isArray(categoryData.articles)
+          ? categoryData.articles
+          : [];
+
+        if (articleIds.length === 0) {
+          setPosts([]);
+          setError(null);
+          return;
+        }
+
+        const articleResponses = await Promise.all(
+          articleIds.map(async (id) => {
+            const articleResponse = await fetch(buildApiUrl(`/news/${id}/`), {
+              signal: controller.signal,
+            });
+            if (!articleResponse.ok) return null;
+            return articleResponse.json();
+          })
+        );
+
+        setPosts(articleResponses.filter(Boolean));
+        setError(null);
+      } catch (fetchError) {
+        if (fetchError.name === "AbortError") return;
+        setError("Failed to fetch category details.");
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => controller.abort();
   }, [categoryId]);
 
   if (loading) return <p>Loading...</p>;
@@ -75,15 +91,10 @@ export default function CategoryDetails({ params }) {
 
   return (
     <div className="container mx-auto py-6">
-      {/* Category Header */}
       <div className="flex items-center mb-6">
-        {category.image && (
+        {category.image_url && (
           <Image
-            src={
-              category.image.startsWith("http")
-                ? category.image
-                : `https://newsapp-najw.onrender.com/${category.image}`
-            }
+            src={normalizeImage(category.image_url)}
             alt={category.name}
             width={64}
             height={64}
@@ -93,19 +104,12 @@ export default function CategoryDetails({ params }) {
         <h1 className="text-3xl font-bold">{category.name}</h1>
       </div>
 
-      {/* Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {posts.length > 0 ? (
           posts.map((post) => (
             <div key={post.id} className="bg-white p-4 rounded-lg shadow-md">
               <Image
-                src={
-                  post.image && post.image.startsWith("http")
-                    ? post.image
-                    : post.image
-                    ? `https://newsapp-najw.onrender.com/${post.image}`
-                    : "/placeholder-image.jpg"
-                }
+                src={normalizeImage(post.image_url || post.image)}
                 alt={post.title || "Default Image"}
                 width={300}
                 height={200}

@@ -1,6 +1,7 @@
 "use client";
 import { FaBookmark } from "react-icons/fa";
 import Image from "next/image";
+import { resolveApiAssetUrl } from "../lib/api";
 
 // Utility function to calculate time ago
 function getTimeAgo(dateString) {
@@ -18,9 +19,16 @@ function getTimeAgo(dateString) {
 }
 
 function CoverageBar({ coverage }) {
-  const [leftPercentage, rightPercentage] = coverage.includes("left")
-    ? [parseInt(coverage), 100 - parseInt(coverage)]
-    : [100 - parseInt(coverage), parseInt(coverage)];
+  const normalizedCoverage =
+    typeof coverage === "string" ? coverage : `${coverage ?? 50}% left coverage`;
+  const parsedValue = Number.parseInt(normalizedCoverage, 10);
+  const safeCoverage = Number.isFinite(parsedValue)
+    ? Math.max(0, Math.min(100, parsedValue))
+    : 50;
+
+  const [leftPercentage, rightPercentage] = normalizedCoverage.toLowerCase().includes("left")
+    ? [safeCoverage, 100 - safeCoverage]
+    : [100 - safeCoverage, safeCoverage];
 
   return (
     <div className="flex items-center space-x-2">
@@ -39,7 +47,7 @@ function CoverageBar({ coverage }) {
 }
 
 export default function RelatedNews({ articles }) {
-  console.log("Related Articles:", articles); // Log to verify data
+  const relatedArticles = Array.isArray(articles) ? articles : [];
 
   return (
     <div>
@@ -53,7 +61,7 @@ export default function RelatedNews({ articles }) {
 
       {/* News Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {articles.map((news) => (
+        {relatedArticles.map((news) => (
           <div key={news.id} className="bg-white p-4 border rounded-lg shadow-sm">
             {/* Header with Categories and Bookmark */}
             <div className="flex justify-between items-center mb-2">
@@ -80,9 +88,9 @@ export default function RelatedNews({ articles }) {
             </div>
 
             {/* Image */}
-            {news.image && (
+            {(news.image_url || news.image) && (
               <Image
-                src={news.image_url}
+                src={resolveApiAssetUrl(news.image_url || news.image)}
                 alt={news.title}
                 width={400}
                 height={200}

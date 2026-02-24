@@ -1,61 +1,80 @@
 "use client";
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import CoverageBar from "./CoverageBar";
+import { buildApiUrl, resolveApiAssetUrl } from "../lib/api";
 
-// Utility function to calculate time ago
 function getTimeAgo(dateString) {
-  const postedDate = new Date(dateString);
-  const now = new Date();
-  const timeDiff = Math.abs(now - postedDate);
-  const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
-  const daysAgo = Math.floor(hoursAgo / 24);
+  const postedAt = new Date(dateString).getTime();
+  if (Number.isNaN(postedAt)) return "Unknown time";
 
-  if (daysAgo > 0) {
-    return `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
-  } else {
-    return `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
+  const diffInHours = Math.max(0, Math.floor((Date.now() - postedAt) / 3600000));
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInDays > 0) {
+    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
   }
+
+  return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
 }
 
-// Coverage Bar Component
-function CoverageBar({ leftCoverage, sources }) {
-  return (
-    <div className="flex flex-col items-start mt-2 space-y-1">
-      <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="absolute left-0 top-0 h-2 bg-blue-600"
-          style={{ width: `${leftCoverage}%` }}
-        ></div>
-        <div
-          className="absolute right-0 top-0 h-2 bg-red-600"
-          style={{ width: `${100 - leftCoverage}%` }}
-        ></div>
-      </div>
-      <div className="flex justify-between w-full text-xs font-semibold text-gray-800">
-        <span>{leftCoverage}% left coverage</span>
-        <span>{sources} sources</span>
-      </div>
-    </div>
-  );
+function getArticleImage(article) {
+  const imagePath = article?.image_url || article?.image;
+  return imagePath ? resolveApiAssetUrl(imagePath) : "/images/Placeholder.webp";
+}
+
+function getCategoryLabel(article) {
+  if (!Array.isArray(article?.categories) || article.categories.length === 0) {
+    return "Uncategorized";
+  }
+  return article.categories.map((category) => category.name).join(", ");
 }
 
 export default function TopNews() {
   const [news, setNews] = useState([]);
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`${baseUrl}/news/`) // Adjust URL to match your API endpoint
-      .then((response) => response.json())
-      .then((data) => {
-        // Sort news articles by publication date in descending order
-        const sortedData = data.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
-        setNews(sortedData.slice(0, 5)); // Get the top 5 latest news articles
-      });
-  }, [baseUrl]);
+    const controller = new AbortController();
+    const newsUrl = buildApiUrl("/news/");
 
-  if (!news || news.length === 0) return <p>Loading...</p>;
+    if (!newsUrl) {
+      setError("API base URL is not configured.");
+      setLoading(false);
+      return () => controller.abort();
+    }
+
+    fetch(newsUrl, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        const items = Array.isArray(data) ? data : [];
+        const sortedData = [...items].sort(
+          (a, b) => new Date(b.published_at) - new Date(a.published_at)
+        );
+        setNews(sortedData.slice(0, 5));
+        setError(null);
+      })
+      .catch((fetchError) => {
+        if (fetchError.name === "AbortError") return;
+        setError("Unable to load top news right now.");
+        setNews([]);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  if (loading) return <p>Loading top news...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (news.length === 0) return <p className="text-gray-500">No top news available.</p>;
 
   const mainNews = news[0];
   const sideNews = news[1];
@@ -72,37 +91,43 @@ export default function TopNews() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {mainNews && (
-          <div className="col-span-2 relative">
+          <Link href={`/news/${mainNews.id}`} className="col-span-2 relative">
             <Image
-              src={mainNews.image_url} 
+              src={getArticleImage(mainNews)}
               alt={mainNews.title}
+              width={1200}
+              height={720}
               className="w-full h-96 object-cover rounded-md"
             />
             <div className="absolute bottom-6 left-6 text-white bg-black bg-opacity-60 p-4 rounded">
               <span className="bg-red-600 px-2 py-1 rounded text-xs uppercase">
-                {mainNews.categories ? mainNews.categories.map(cat => cat.name).join(', ') : 'Uncategorized'}
+                {getCategoryLabel(mainNews)}
               </span>
               <h3 className="text-4xl font-extrabold mt-2">{mainNews.title}</h3>
-              <CoverageBar leftCoverage={54} sources={20} /> {/* Replace with dynamic values */}
-              <p className="text-sm mt-2">{getTimeAgo(mainNews.published_at)} | {mainNews.location}</p>
+              <CoverageBar leftCoverage={54} sources={20} />
+              <p className="text-sm mt-2">
+                {getTimeAgo(mainNews.published_at)} | {mainNews.location || "Unknown"}
+              </p>
             </div>
-          </div>
+          </Link>
         )}
 
         {sideNews && (
-          <Link href={`/news/${sideNews.id}`} passHref>
+          <Link href={`/news/${sideNews.id}`}>
             <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">
-                {sideNews.categories ? sideNews.categories.map(cat => cat.name).join(', ') : 'Uncategorized'}
-              </span>
+              <span className="text-xs text-gray-500">{getCategoryLabel(sideNews)}</span>
               <h4 className="text-xl font-bold mt-2">{sideNews.title}</h4>
               <CoverageBar leftCoverage={38} sources={8} />
               <Image
-                src={sideNews.image_url}
+                src={getArticleImage(sideNews)}
                 alt={sideNews.title}
+                width={640}
+                height={360}
                 className="w-full h-40 object-cover mt-4 rounded-md"
               />
-              <p className="text-sm text-gray-600 mt-2">{getTimeAgo(sideNews.published_at)} | {sideNews.location}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                {getTimeAgo(sideNews.published_at)} | {sideNews.location || "Unknown"}
+              </p>
             </div>
           </Link>
         )}
@@ -110,19 +135,21 @@ export default function TopNews() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {bottomNews.map((item) => (
-          <Link key={item.id} href={`/news/${item.id}`} passHref>
+          <Link key={item.id} href={`/news/${item.id}`}>
             <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">
-                {item.categories ? item.categories.map(cat => cat.name).join(', ') : 'Uncategorized'}
-              </span>
+              <span className="text-xs text-gray-500">{getCategoryLabel(item)}</span>
               <h5 className="text-lg font-bold mt-2">{item.title}</h5>
               <CoverageBar leftCoverage={50} sources={6} />
               <Image
-                src={item.image_url}
+                src={getArticleImage(item)}
                 alt={item.title}
+                width={640}
+                height={360}
                 className="w-full h-32 object-cover mt-4 rounded-md"
               />
-              <p className="text-sm text-gray-600 mt-2">{getTimeAgo(item.published_at)} | {item.location}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                {getTimeAgo(item.published_at)} | {item.location || "Unknown"}
+              </p>
             </div>
           </Link>
         ))}

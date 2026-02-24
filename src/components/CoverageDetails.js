@@ -14,9 +14,17 @@ export default function CoverageDetails({ apiUrl }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!apiUrl) {
+      setLoading(false);
+      setError("Coverage URL is missing.");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
     const fetchCoverageDetails = async () => {
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
         }
@@ -28,7 +36,9 @@ export default function CoverageDetails({ apiUrl }) {
           negative: data.sentiment_stats.negative,
           sentiment: data.sentiment,
         });
+        setError(null);
       } catch (err) {
+        if (err.name === "AbortError") return;
         console.error("Error fetching coverage details:", err);
         setError(err.message);
       } finally {
@@ -37,6 +47,8 @@ export default function CoverageDetails({ apiUrl }) {
     };
 
     fetchCoverageDetails();
+
+    return () => controller.abort();
   }, [apiUrl]);
 
   if (loading) {

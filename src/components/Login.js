@@ -1,33 +1,55 @@
-// components/Login.js
 "use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import from next/navigation
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { buildApiUrl } from "../lib/api";
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setError(null);
 
-    const response = await fetch(`${baseUrl}/api/auth/login/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    const loginUrl = buildApiUrl("/auth/login/");
+    if (!loginUrl) {
+      setError("API base URL is not configured.");
+      return;
+    }
 
-    if (response.ok) {
+    setLoading(true);
+    try {
+      const response = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
       const data = await response.json();
-      // Save token (if you're using JWT)
-      localStorage.setItem('token', data.key);  // or data.access if using JWT
-      router.push('/personalized-news');  // Redirect after login
-    } else {
-      const errorData = await response.json();
-      setError(errorData.non_field_errors[0] || 'Login failed');
+
+      if (!response.ok) {
+        const apiError =
+          data?.non_field_errors?.[0] ||
+          data?.detail ||
+          "Login failed. Check your credentials.";
+        setError(apiError);
+        return;
+      }
+
+      const token = data?.key || data?.access;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      router.push("/");
+    } catch {
+      setError("Unable to login right now.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,27 +58,41 @@ export default function Login() {
       <h2 className="text-2xl font-bold mb-4">Login</h2>
       <form onSubmit={handleLogin}>
         <div className="mb-4">
-          <label htmlFor="username" className="block text-gray-700">Username</label>
+          <label htmlFor="username" className="block text-gray-700">
+            Username
+          </label>
           <input
             type="text"
             id="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(event) => setUsername(event.target.value)}
             className="w-full px-4 py-2 border rounded"
+            autoComplete="username"
+            required
           />
         </div>
         <div className="mb-4">
-          <label htmlFor="password" className="block text-gray-700">Password</label>
+          <label htmlFor="password" className="block text-gray-700">
+            Password
+          </label>
           <input
             type="password"
             id="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             className="w-full px-4 py-2 border rounded"
+            autoComplete="current-password"
+            required
           />
         </div>
-        {error && <p className="text-red-500">{error}</p>}
-        <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Login</button>
+        {error && <p className="text-red-500 mb-3">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-500 text-white py-2 px-4 rounded disabled:opacity-70"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
       </form>
     </div>
   );

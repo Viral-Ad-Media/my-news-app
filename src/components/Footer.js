@@ -62,7 +62,7 @@ export default function Footer() {
           {/* Logo */}
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center">
-              <Image src='/images/logo.png' alt="Logo" className="h-10" />
+              <Image src="/images/logo.png" alt="Logo" width={150} height={40} className="h-10 w-auto" />
             </Link>
           </div>
 
@@ -94,7 +94,7 @@ export default function Footer() {
 
         {/* Bottom Links with Copyright */}
         <div className="mt-4 container mx-auto flex justify-between items-center text-sm text-gray-600 px-4">
-          <div>© 2025 All Rights Reserved</div>
+          <div>© {new Date().getFullYear()} All Rights Reserved</div>
           <div>
             <a href="#" className="mr-4 hover:underline">Privacy Policy</a>
             <a href="#" className="hover:underline">Terms of Use</a>

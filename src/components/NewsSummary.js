@@ -1,14 +1,21 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { buildApiUrl } from '../lib/api';
 
 export default function NewsSummary({ activeTab, setActiveTab }) {
   const [newsSummary, setNewsSummary] = useState([]);
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const [error, setError] = useState(null);
   
   // Fetch news data whenever the activeTab changes
   useEffect(() => {
     // Define the base API URL
-    let url = `${baseUrl}/news/`;
+    let url = buildApiUrl('/news/');
+    if (!url) {
+      setError('API base URL is not configured.');
+      setNewsSummary([]);
+      return;
+    }
 
     // Adjust the URL based on the selected tab
     if (activeTab === 'Last Day') {
@@ -22,9 +29,15 @@ export default function NewsSummary({ activeTab, setActiveTab }) {
     // Fetch filtered news data
     fetch(url)
       .then((response) => response.json())
-      .then((data) => setNewsSummary(data.slice(0, 2))) // Limit to 2 items for summary
-      .catch((error) => console.error("Error fetching news summary:", error));
-  }, [baseUrl, activeTab]);
+      .then((data) => {
+        setNewsSummary(Array.isArray(data) ? data.slice(0, 2) : []);
+        setError(null);
+      }) // Limit to 2 items for summary
+      .catch(() => {
+        setError('Unable to load summary.');
+        setNewsSummary([]);
+      });
+  }, [activeTab]);
 
   const newsSummaryTabs = ['Last Day', 'Last Week', 'Last Month'];
 
@@ -51,18 +64,19 @@ export default function NewsSummary({ activeTab, setActiveTab }) {
       </div>
 
       {/* Displaying News Summary */}
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
       <div className="space-y-2">
         {newsSummary.map((news) => (
           <p key={news.id} className="text-sm text-gray-600 mb-2">
-            <a href={`/news/${news.id}`} className="font-medium text-gray-500 hover:underline">
+            <Link href={`/news/${news.id}`} className="font-medium text-gray-500 hover:underline">
               {news.title}
-            </a>
+            </Link>
             <span className="ml-2 text-gray-500">{news.summary}</span>
           </p>
         ))}
       </div>
       <p className="text-xs text-gray-500 mt-2">Updated {activeTab.toLowerCase()}</p>
-      <a href="#" className="text-blue-500 hover:underline text-sm">Show More &rarr;</a>
+      <Link href="/" className="text-blue-500 hover:underline text-sm">Show More &rarr;</Link>
     </div>
   );
 }

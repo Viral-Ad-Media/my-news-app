@@ -35,7 +35,13 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <Image src='/images/logo.png' alt="Logo" className="h-8 mr-2 cursor-pointer" />
+            <Image
+              src="/images/logo.png"
+              alt="Logo"
+              width={120}
+              height={32}
+              className="h-8 w-auto mr-2 cursor-pointer"
+            />
             {/* <span className="text-lg font-bold">VTNews</span> */}
           </Link>
         </div>
@@ -45,7 +51,9 @@ export default function Header() {
           <button className="text-gray-700">
             <FaUser />
           </button>
-          <button className="bg-black text-white px-4 py-2 rounded-lg">Try for free</button>
+          <Link href="/signup" className="bg-black text-white px-4 py-2 rounded-lg">
+            Try for free
+          </Link>
         </div>
 
         {/* Desktop Navigation and Buttons */}
@@ -128,11 +136,16 @@ export default function Header() {
             <button className="text-gray-700">
               <FaSearch />
             </button>
-            <button className="flex items-center border border-gray-400 px-3 py-1 rounded text-gray-700 hover:bg-gray-200">
+            <Link
+              href="/login"
+              className="flex items-center border border-gray-400 px-3 py-1 rounded text-gray-700 hover:bg-gray-200"
+            >
               <FaUser className="mr-1" />
               Login
-            </button>
-            <button className="bg-black text-white px-4 py-2 rounded-lg">Try for free</button>
+            </Link>
+            <Link href="/signup" className="bg-black text-white px-4 py-2 rounded-lg">
+              Try for free
+            </Link>
           </div>
         </div>
       </div>

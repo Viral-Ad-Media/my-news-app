@@ -1,18 +1,13 @@
 // components/LeftSidebar.js
 
 "use client";
-import { useEffect} from 'react';
 // import DailyIndex from './DailyIndex';
 import CoverageDetails from './CoverageDetails';
 import ExchangeRate from './ExchangeRate';
+import { buildApiUrl } from '../lib/api';
 
 export default function LeftSidebar({ articleId }) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  useEffect(() => {
-    // You can update this state with real data from an API call if available
-    // For now, these are placeholder values
-  }, []);
+  const coverageUrl = articleId ? buildApiUrl(`/news/${articleId}/coverage/`) : '';
 
   return (
     <div>
@@ -23,9 +18,7 @@ export default function LeftSidebar({ articleId }) {
       {/* <DailyIndex indexValue={indexValue} sentiment={sentiment} /> */}
 
       {/* Coverage Details Section */}
-      <CoverageDetails
-        apiUrl={`${baseUrl}/news/${articleId}/coverage/`}
-      />
+      {coverageUrl && <CoverageDetails apiUrl={coverageUrl} />}
     </div>
   );
 }
