@@ -4,8 +4,7 @@ const nextConfig = {
   images: {
     domains: [
       "res.cloudinary.com",
-      "aboki-newsapp-8c7372ca5580.herokuapp.com",
-      "newsapp-najw.onrender.com",
+      "newsapp-server-u11s.onrender.com",
     ],
   },
 };
