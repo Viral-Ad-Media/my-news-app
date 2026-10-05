@@ -1,45 +1,50 @@
 "use client";
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { buildApiUrl } from '../lib/api';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { listItems, buildApiUrl } from "../lib/api";
 
 export default function NewsSummary({ activeTab, setActiveTab }) {
   const [newsSummary, setNewsSummary] = useState([]);
   const [error, setError] = useState(null);
-  
+
   // Fetch news data whenever the activeTab changes
   useEffect(() => {
     // Define the base API URL
-    let url = buildApiUrl('/news/');
+    let url = buildApiUrl("/news/");
     if (!url) {
-      setError('API base URL is not configured.');
+      setError("API base URL is not configured.");
       setNewsSummary([]);
       return;
     }
 
     // Adjust the URL based on the selected tab
-    if (activeTab === 'Last Day') {
-      url += '?filter=last_day';
-    } else if (activeTab === 'Last Week') {
-      url += '?filter=last_week';
-    } else if (activeTab === 'Last Month') {
-      url += '?filter=last_month';
+    if (activeTab === "Last Day") {
+      url += "?filter=last_day";
+    } else if (activeTab === "Last Week") {
+      url += "?filter=last_week";
+    } else if (activeTab === "Last Month") {
+      url += "?filter=last_month";
     }
 
-    // Fetch filtered news data
-    fetch(url)
-      .then((response) => response.json())
+    const controller = new AbortController();
+    fetch(url, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Summary unavailable");
+        return response.json();
+      })
       .then((data) => {
-        setNewsSummary(Array.isArray(data) ? data.slice(0, 2) : []);
+        setNewsSummary(listItems(data).slice(0, 2));
         setError(null);
       }) // Limit to 2 items for summary
-      .catch(() => {
-        setError('Unable to load summary.');
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        setError("Unable to load summary.");
         setNewsSummary([]);
       });
+    return () => controller.abort();
   }, [activeTab]);
 
-  const newsSummaryTabs = ['Last Day', 'Last Week', 'Last Month'];
+  const newsSummaryTabs = ["Last Day", "Last Week", "Last Month"];
 
   return (
     <div>
@@ -54,7 +59,9 @@ export default function NewsSummary({ activeTab, setActiveTab }) {
           <button
             key={tab}
             className={`text-xs px-3 py-1 rounded-full ${
-              activeTab === tab ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'
+              activeTab === tab
+                ? "bg-black text-white"
+                : "bg-gray-200 text-gray-800"
             }`}
             onClick={() => setActiveTab(tab)}
           >
@@ -68,15 +75,24 @@ export default function NewsSummary({ activeTab, setActiveTab }) {
       <div className="space-y-2">
         {newsSummary.map((news) => (
           <p key={news.id} className="text-sm text-gray-600 mb-2">
-            <Link href={`/news/${news.id}`} className="font-medium text-gray-500 hover:underline">
+            <Link
+              href={`/news/${news.id}`}
+              className="font-medium text-gray-500 hover:underline"
+            >
               {news.title}
             </Link>
-            <span className="ml-2 text-gray-500">{news.summary}</span>
+            <span className="ml-2 text-gray-500">
+              {news.summary || news.description}
+            </span>
           </p>
         ))}
       </div>
-      <p className="text-xs text-gray-500 mt-2">Updated {activeTab.toLowerCase()}</p>
-      <Link href="/" className="text-blue-500 hover:underline text-sm">Show More &rarr;</Link>
+      <p className="text-xs text-gray-500 mt-2">
+        Updated {activeTab.toLowerCase()}
+      </p>
+      <Link href="/" className="text-blue-500 hover:underline text-sm">
+        Show More &rarr;
+      </Link>
     </div>
   );
 }

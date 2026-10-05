@@ -1,13 +1,16 @@
-import Image from "next/image";
+import Image from "../../../components/NewsImage";
+import SaveStoryButton from "../../../components/SaveStoryButton";
+import { notFound } from "next/navigation";
+import { buildServerApiUrl } from "../../../lib/server-api";
 import LeftSidebar from "../../../components/LeftSidebar";
 import RightSidebar from "../../../components/RightSidebar";
 import StoryCoverage from "../../../components/StoryCoverage";
 import RelatedNews from "../../../components/RelatedNews";
-import { buildApiUrl, resolveApiAssetUrl } from "../../../lib/api";
+import { resolveApiAssetUrl } from "../../../lib/api";
 
 async function fetchArticleAndRelatedNews(articleId) {
-  const articleUrl = buildApiUrl(`/news/${articleId}/`);
-  const relatedUrl = buildApiUrl(`/news/${articleId}/related/`);
+  const articleUrl = buildServerApiUrl(`/news/${articleId}/`);
+  const relatedUrl = buildServerApiUrl(`/news/${articleId}/related/`);
 
   if (!articleUrl || !relatedUrl) {
     return { article: null, relatedArticles: [] };
@@ -15,16 +18,24 @@ async function fetchArticleAndRelatedNews(articleId) {
 
   try {
     const [articleRes, relatedRes] = await Promise.all([
-      fetch(articleUrl, { cache: "no-store" }),
-      fetch(relatedUrl, { cache: "no-store" }),
+      fetch(articleUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      }),
+      fetch(relatedUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      }).catch(() => null),
     ]);
 
+    if (articleRes.status === 404)
+      return { article: null, relatedArticles: [], missing: true };
     if (!articleRes.ok) {
       throw new Error("Failed to fetch article.");
     }
 
     const article = await articleRes.json();
-    const relatedArticles = relatedRes.ok ? await relatedRes.json() : [];
+    const relatedArticles = relatedRes?.ok ? await relatedRes.json() : [];
     return { article, relatedArticles };
   } catch (error) {
     console.error("Error fetching data:", error.message);
@@ -33,18 +44,20 @@ async function fetchArticleAndRelatedNews(articleId) {
 }
 
 export default async function NewsDetails({ params }) {
-  const { id: articleId } = params;
-  const { article, relatedArticles } = await fetchArticleAndRelatedNews(articleId);
+  const { id: articleId } = await params;
+  const { article, relatedArticles, missing } =
+    await fetchArticleAndRelatedNews(articleId);
+  if (missing) notFound();
 
   if (!article) {
     return (
       <div className="text-center text-gray-500">
-        <p>Article not found.</p>
+        <p>The news service is temporarily unavailable.</p>
       </div>
     );
   }
 
-  const coverageUrl = buildApiUrl(`/news/${articleId}/coverage/`);
+  const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
   const articleImage = article.image_url || article.image;
 
   return (
@@ -82,7 +95,8 @@ export default async function NewsDetails({ params }) {
             </div>
           )}
 
-          <h3 className="text-2xl font-bold mt-6 mb-1">News summary</h3>
+          <SaveStoryButton articleId={article.id} />
+          <h3 className="text-2xl font-bold mt-6 mb-1">Article</h3>
           <div className="flex flex-col space-y-1 mb-6">
             <div className="h-0.5 w-full bg-gray-700"></div>
             <div className="h-0.5 w-full bg-gray-400"></div>

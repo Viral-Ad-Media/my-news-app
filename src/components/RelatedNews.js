@@ -1,6 +1,9 @@
 "use client";
-import { FaBookmark } from "react-icons/fa";
-import Image from "next/image";
+import useSavedStories from "../lib/use-saved-stories";
+import SaveStoryButton from "./SaveStoryButton";
+import CoverageBar from "./CoverageBar";
+import Link from "next/link";
+import Image from "./NewsImage";
 import { resolveApiAssetUrl } from "../lib/api";
 
 // Utility function to calculate time ago
@@ -18,37 +21,12 @@ function getTimeAgo(dateString) {
   }
 }
 
-function CoverageBar({ coverage }) {
-  const normalizedCoverage =
-    typeof coverage === "string" ? coverage : `${coverage ?? 50}% left coverage`;
-  const parsedValue = Number.parseInt(normalizedCoverage, 10);
-  const safeCoverage = Number.isFinite(parsedValue)
-    ? Math.max(0, Math.min(100, parsedValue))
-    : 50;
-
-  const [leftPercentage, rightPercentage] = normalizedCoverage.toLowerCase().includes("left")
-    ? [safeCoverage, 100 - safeCoverage]
-    : [100 - safeCoverage, safeCoverage];
-
-  return (
-    <div className="flex items-center space-x-2">
-      <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="absolute left-0 top-0 h-2 bg-blue-600"
-          style={{ width: `${leftPercentage}%` }}
-        ></div>
-        <div
-          className="absolute right-0 top-0 h-2 bg-red-600"
-          style={{ width: `${rightPercentage}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-}
-
 export default function RelatedNews({ articles }) {
   const relatedArticles = Array.isArray(articles) ? articles : [];
 
+  const savedIds = useSavedStories(
+    relatedArticles.map((article) => article.id),
+  );
   return (
     <div>
       {/* Header */}
@@ -62,7 +40,10 @@ export default function RelatedNews({ articles }) {
       {/* News Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {relatedArticles.map((news) => (
-          <div key={news.id} className="bg-white p-4 border rounded-lg shadow-sm">
+          <div
+            key={news.id}
+            className="bg-white p-4 border rounded-lg shadow-sm"
+          >
             {/* Header with Categories and Bookmark */}
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-gray-600">
@@ -70,22 +51,19 @@ export default function RelatedNews({ articles }) {
                   ? news.categories.map((cat) => cat.name).join(", ")
                   : "Uncategorized"}
               </span>
-              <button className="text-gray-500">
-                <FaBookmark />
-              </button>
+              <SaveStoryButton
+                articleId={news.id}
+                initiallySaved={savedIds.includes(news.id)}
+              />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-bold text-gray-900 mb-2">{news.title}</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              <Link href={`/news/${news.id}`}>{news.title}</Link>
+            </h3>
 
             {/* Coverage Bar and Source Count */}
-            <CoverageBar coverage={news.coverage || "50% left coverage"} />
-            <div className="flex justify-between items-center mt-1 text-xs text-gray-600">
-              <span>{news.coverage || "50% left coverage"}</span>
-              <span>
-                {news.sources || 1} source{news.sources > 1 ? "s" : ""}
-              </span>
-            </div>
+            <CoverageBar sources={news.total_sources} />
 
             {/* Image */}
             {(news.image_url || news.image) && (

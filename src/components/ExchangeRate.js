@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const FALLBACK_API_KEY = "47cdba4ec2852c4342e27f3d";
-const exchangeApiKey =
-  process.env.NEXT_PUBLIC_EXCHANGE_API_KEY || FALLBACK_API_KEY;
-
 export default function ExchangeRate() {
   const [exchangeRates, setExchangeRates] = useState([]);
+  const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -17,30 +14,58 @@ export default function ExchangeRate() {
 
     const fetchRates = async () => {
       try {
-        const response = await fetch(
-          `https://v6.exchangerate-api.com/v6/${exchangeApiKey}/latest/NGN`,
-          { signal: controller.signal }
-        );
+        const response = await fetch("/api/exchange-rates", {
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
         const data = await response.json();
 
+        setUpdatedAt(data.updated_at || null);
         const transformedData = [
-          { currency: "USD", rate: 1 / data.conversion_rates.USD, flag: "/flags/US.png" },
-          { currency: "CAD", rate: 1 / data.conversion_rates.CAD, flag: "/flags/CA.png" },
-          { currency: "AUD", rate: 1 / data.conversion_rates.AUD, flag: "/flags/AU.png" },
-          { currency: "GBP", rate: 1 / data.conversion_rates.GBP, flag: "/flags/GB.png" },
-          { currency: "AED", rate: 1 / data.conversion_rates.AED, flag: "/flags/AE.png" },
-          { currency: "CNY", rate: 1 / data.conversion_rates.CNY, flag: "/flags/CN.png" },
-          { currency: "EGP", rate: 1 / data.conversion_rates.EGP, flag: "/flags/EG.png" },
+          {
+            currency: "USD",
+            rate: 1 / data.conversion_rates.USD,
+            flag: "/flags/US.png",
+          },
+          {
+            currency: "CAD",
+            rate: 1 / data.conversion_rates.CAD,
+            flag: "/flags/CA.png",
+          },
+          {
+            currency: "AUD",
+            rate: 1 / data.conversion_rates.AUD,
+            flag: "/flags/AU.png",
+          },
+          {
+            currency: "GBP",
+            rate: 1 / data.conversion_rates.GBP,
+            flag: "/flags/GB.png",
+          },
+          {
+            currency: "AED",
+            rate: 1 / data.conversion_rates.AED,
+            flag: "/flags/AE.png",
+          },
+          {
+            currency: "CNY",
+            rate: 1 / data.conversion_rates.CNY,
+            flag: "/flags/CN.png",
+          },
+          {
+            currency: "EGP",
+            rate: 1 / data.conversion_rates.EGP,
+            flag: "/flags/EG.png",
+          },
         ];
 
         setExchangeRates(
           transformedData.map((item) => ({
             ...item,
             rate: item.rate.toFixed(2),
-          }))
+          })),
         );
         setError(null);
       } catch (fetchError) {
@@ -57,7 +82,9 @@ export default function ExchangeRate() {
   }, []);
 
   if (loading) {
-    return <p className="text-center text-gray-600">Loading exchange rates...</p>;
+    return (
+      <p className="text-center text-gray-600">Loading exchange rates...</p>
+    );
   }
 
   if (error) {
@@ -99,11 +126,13 @@ export default function ExchangeRate() {
       </table>
       <p className="mt-4 text-sm text-gray-400">
         Currency exchange rates in <span className="text-red-500">NGN</span> on{" "}
-        {new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
+        {updatedAt
+          ? new Date(updatedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "an unavailable update date"}
       </p>
     </div>
   );

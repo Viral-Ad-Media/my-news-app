@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "./NewsImage";
 import CoverageBar from "./CoverageBar";
-import { buildApiUrl, resolveApiAssetUrl } from "../lib/api";
+import { listItems, buildApiUrl, resolveApiAssetUrl } from "../lib/api";
 
 function getTimeAgo(dateString) {
   const postedAt = new Date(dateString).getTime();
   if (Number.isNaN(postedAt)) return "Unknown time";
 
-  const diffInHours = Math.max(0, Math.floor((Date.now() - postedAt) / 3600000));
+  const diffInHours = Math.max(
+    0,
+    Math.floor((Date.now() - postedAt) / 3600000),
+  );
   const diffInDays = Math.floor(diffInHours / 24);
 
   if (diffInDays > 0) {
@@ -55,9 +58,9 @@ export default function TopNews() {
         return response.json();
       })
       .then((data) => {
-        const items = Array.isArray(data) ? data : [];
+        const items = listItems(data);
         const sortedData = [...items].sort(
-          (a, b) => new Date(b.published_at) - new Date(a.published_at)
+          (a, b) => new Date(b.published_at) - new Date(a.published_at),
         );
         setNews(sortedData.slice(0, 5));
         setError(null);
@@ -74,7 +77,8 @@ export default function TopNews() {
 
   if (loading) return <p>Loading top news...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
-  if (news.length === 0) return <p className="text-gray-500">No top news available.</p>;
+  if (news.length === 0)
+    return <p className="text-gray-500">No top news available.</p>;
 
   const mainNews = news[0];
   const sideNews = news[1];
@@ -104,9 +108,10 @@ export default function TopNews() {
                 {getCategoryLabel(mainNews)}
               </span>
               <h3 className="text-4xl font-extrabold mt-2">{mainNews.title}</h3>
-              <CoverageBar leftCoverage={54} sources={20} />
+              <CoverageBar sources={mainNews.total_sources} />
               <p className="text-sm mt-2">
-                {getTimeAgo(mainNews.published_at)} | {mainNews.location || "Unknown"}
+                {getTimeAgo(mainNews.published_at)} |{" "}
+                {mainNews.location || "Unknown"}
               </p>
             </div>
           </Link>
@@ -115,9 +120,11 @@ export default function TopNews() {
         {sideNews && (
           <Link href={`/news/${sideNews.id}`}>
             <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">{getCategoryLabel(sideNews)}</span>
+              <span className="text-xs text-gray-500">
+                {getCategoryLabel(sideNews)}
+              </span>
               <h4 className="text-xl font-bold mt-2">{sideNews.title}</h4>
-              <CoverageBar leftCoverage={38} sources={8} />
+              <CoverageBar sources={sideNews.total_sources} />
               <Image
                 src={getArticleImage(sideNews)}
                 alt={sideNews.title}
@@ -126,7 +133,8 @@ export default function TopNews() {
                 className="w-full h-40 object-cover mt-4 rounded-md"
               />
               <p className="text-sm text-gray-600 mt-2">
-                {getTimeAgo(sideNews.published_at)} | {sideNews.location || "Unknown"}
+                {getTimeAgo(sideNews.published_at)} |{" "}
+                {sideNews.location || "Unknown"}
               </p>
             </div>
           </Link>
@@ -137,9 +145,11 @@ export default function TopNews() {
         {bottomNews.map((item) => (
           <Link key={item.id} href={`/news/${item.id}`}>
             <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">{getCategoryLabel(item)}</span>
+              <span className="text-xs text-gray-500">
+                {getCategoryLabel(item)}
+              </span>
               <h5 className="text-lg font-bold mt-2">{item.title}</h5>
-              <CoverageBar leftCoverage={50} sources={6} />
+              <CoverageBar sources={item.total_sources} />
               <Image
                 src={getArticleImage(item)}
                 alt={item.title}
