@@ -1,195 +1,120 @@
-"use client"; // Ensure client-side rendering
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { FaCalendarAlt, FaClock, FaUser, FaMapMarkerAlt, FaBookmark, FaSearch } from 'react-icons/fa'; // Import icons
-import { GiHamburgerMenu } from 'react-icons/gi'; // Import hamburger icon
-
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+const links = [
+  ["Home", "/"],
+  ["My Feed", "/feed"],
+  ["Saved News", "/news/saved"],
+  ["Topics", "/news/custom"],
+  ["Local News", "/local-news"],
+  ["Timelines", "/timelines"],
+  ["Lopsided", "/lopsided"],
+];
 export default function Header() {
-  const [currentTime, setCurrentTime] = useState(null);
-  const [isFeedDropdownOpen, setIsFeedDropdownOpen] = useState(false); // State for My Feed dropdown
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
-  const [location, setLocation] = useState("New York"); // Default location
-
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [location, setLocation] = useState("ng");
   useEffect(() => {
-    const updateCurrentTime = () => {
-      setCurrentTime(new Date());
-    };
-
-    updateCurrentTime(); // Set the initial time
-    const timer = setInterval(updateCurrentTime, 1000);
-
-    return () => clearInterval(timer); // Cleanup timer on component unmount
+    setLocation(localStorage.getItem("news-location") || "ng");
+    const update = () =>
+      fetch("/api/session")
+        .then((res) => (res.ok ? res.json() : null))
+        .then(setUser)
+        .catch(() => setUser(null));
+    update();
+    window.addEventListener("news-session", update);
+    return () => window.removeEventListener("news-session", update);
   }, []);
-
+  async function logout() {
+    const response = await fetch("/api/session", { method: "DELETE" });
+    if (response.ok) {
+      setUser(null);
+      window.dispatchEvent(new Event("news-session"));
+      window.location.assign("/");
+    }
+  }
   return (
-    <header className="bg-gray-100 border-b border-gray-300 py-2">
-      <div className="container mx-auto flex justify-between items-center px-4">
-        
-        {/* Hamburger Icon for Mobile */}
-        <button className="md:hidden text-gray-800" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          <GiHamburgerMenu size={24} />
+    <header className="bg-gray-100 border-b p-4">
+      <div className="container mx-auto flex flex-wrap gap-4 items-center">
+        <Link href="/">
+          <Image
+            src="/images/logo.png"
+            width={120}
+            height={32}
+            alt="AbokiNews"
+          />
+        </Link>
+        <button
+          className="lg:hidden underline"
+          aria-expanded={open}
+          aria-controls="news-nav"
+          onClick={() => setOpen(!open)}
+        >
+          Menu
         </button>
-        
-        {/* Logo */}
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/images/logo.png"
-              alt="Logo"
-              width={120}
-              height={32}
-              className="h-8 w-auto mr-2 cursor-pointer"
-            />
-            {/* <span className="text-lg font-bold">VTNews</span> */}
-          </Link>
-        </div>
-
-        {/* Icons and Buttons on Mobile */}
-        <div className="flex items-center space-x-4 md:hidden">
-          <button className="text-gray-700">
-            <FaUser />
-          </button>
-          <Link href="/signup" className="bg-black text-white px-4 py-2 rounded-lg">
-            Try for free
-          </Link>
-        </div>
-
-        {/* Desktop Navigation and Buttons */}
-        <div className="hidden md:flex items-center justify-between w-full ml-6 pl-6">
-          {/* Navigation */}
-          <nav className="flex space-x-6 text-gray-800 font-medium">
-            <Link href="/" className="hover:underline relative group">
-              Home
-              <div className="h-0.5 bg-black mt-1 absolute bottom-0 left-0 right-0 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-            </Link>
-
-            {/* My Feed with Dropdown */}
-            <div className="relative">
-              <button
-                onMouseEnter={() => setIsFeedDropdownOpen(true)}
-                onMouseLeave={() => setIsFeedDropdownOpen(false)}
-                className="relative group hover:underline flex items-center space-x-1"
-              >
-                <span>My Feed</span>
-                <span className="text-xs">&#x25BC;</span> {/* Down arrow for dropdown */}
-              </button>
-              {isFeedDropdownOpen && (
-                <div
-                  onMouseEnter={() => setIsFeedDropdownOpen(true)}
-                  onMouseLeave={() => setIsFeedDropdownOpen(false)}
-                  className="absolute left-0 mt-2 w-40 bg-white border border-gray-300 rounded shadow-lg"
-                >
-                  <Link href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Saved News</Link>
-                  <Link href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Custom News</Link>
-                </div>
-              )}
-            </div>
-
-            <Link href="#" className="hover:underline relative group">
-              Lopsided
-              <div className="h-0.5 bg-black mt-1 absolute bottom-0 left-0 right-0 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-            </Link>
-            <Link href="#" className="hover:underline relative group">
-              Local News
-              <div className="h-0.5 bg-black mt-1 absolute bottom-0 left-0 right-0 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-            </Link>
-            <Link href="#" className="hover:underline relative group">
-              Timelines
-              <div className="h-0.5 bg-black mt-1 absolute bottom-0 left-0 right-0 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-            </Link>
-          </nav>
-
-          {/* Date, Time, and Location */}
-          <div className="flex items-center text-sm text-gray-800 space-x-4">
-            {currentTime && (
-              <>
-                <div className="flex items-center space-x-1">
-                  <FaCalendarAlt />
-                  <span>{currentTime.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <FaClock />
-                  <span>{currentTime.toLocaleTimeString()}</span>
-                </div>
-                <div className="flex items-center space-x-1 relative group">
-                  <FaMapMarkerAlt />
-                  <span>{location}</span>
-                  <span className="text-xs ml-1">&#x25BC;</span> {/* Down arrow for location dropdown */}
-                  {/* Location Dropdown */}
-                  <div className="absolute left-0 mt-2 w-32 bg-white border border-gray-300 rounded shadow-lg hidden group-hover:block">
-                    <button onClick={() => setLocation("New York")} className="block px-4 py-2 text-gray-700 hover:bg-gray-100">New York</button>
-                    <button onClick={() => setLocation("Los Angeles")} className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Los Angeles</button>
-                    <button onClick={() => setLocation("Chicago")} className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Chicago</button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Icons and Buttons */}
-          <div className="flex items-center space-x-4">
-            <button className="text-gray-700">
-              <FaBookmark />
-            </button>
-            <button className="text-gray-700">
-              <FaSearch />
-            </button>
+        <nav
+          id="news-nav"
+          className={`${open ? "flex" : "hidden"} lg:flex flex-wrap gap-4`}
+        >
+          {links.map(([label, href]) => (
             <Link
-              href="/login"
-              className="flex items-center border border-gray-400 px-3 py-1 rounded text-gray-700 hover:bg-gray-200"
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className="hover:underline"
             >
-              <FaUser className="mr-1" />
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <form action="/search" className="flex gap-2">
+          <input
+            name="q"
+            maxLength={200}
+            aria-label="Search stories"
+            placeholder="Search stories"
+            className="border p-1 w-36"
+          />
+          <button className="underline">Search</button>
+        </form>
+        <label className="text-sm">
+          Country{" "}
+          <select
+            value={location}
+            onChange={(event) => {
+              const value = event.target.value;
+              setLocation(value);
+              localStorage.setItem("news-location", value);
+              window.dispatchEvent(new Event("news-location"));
+            }}
+          >
+            <option value="ng">Nigeria</option>
+            <option value="us">United States</option>
+            <option value="gb">United Kingdom</option>
+          </select>
+        </label>
+        {user ? (
+          <>
+            <span>{user.username}</span>
+            <button onClick={logout} className="underline">
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/login" className="underline">
               Login
             </Link>
-            <Link href="/signup" className="bg-black text-white px-4 py-2 rounded-lg">
-              Try for free
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="bg-gray-100 p-4 md:hidden border-t border-gray-300">
-          {/* Navigation Links */}
-          <Link href="/" className="block py-2 text-gray-700">Home</Link>
-
-          {/* My Feed with Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsFeedDropdownOpen(!isFeedDropdownOpen)}
-              className="block py-2 text-gray-700 w-full text-left"
+            <Link
+              href="/signup"
+              className="bg-black text-white px-3 py-1 rounded"
             >
-              My Feed
-              <span className="ml-2 text-xs">&#x25BC;</span>
-            </button>
-            {isFeedDropdownOpen && (
-              <div className="ml-4 mt-1">
-                <Link href="/news/saved" className="block py-2 text-gray-700">Saved News</Link>
-                <Link href="/news/custom" className="block py-2 text-gray-700">Custom News</Link>
-              </div>
-            )}
-          </div>
-
-          <Link href="/lopsided" className="block py-2 text-gray-700">Lopsided</Link>
-          <Link href="/local-news" className="block py-2 text-gray-700">Local News</Link>
-          <Link href="/timelines" className="block py-2 text-gray-700">Timelines</Link>
-
-          {/* Location Selector */}
-          <div className="border-t pt-2 mt-2">
-            <h3 className="text-sm font-bold text-gray-700 mb-2">Location:</h3>
-            <div className="flex items-center">
-              <FaMapMarkerAlt className="mr-2" />
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700">
-                {location}
-              </button>
-              <span className="ml-2 text-xs">&#x25BC;</span> {/* Down arrow for location dropdown */}
-            </div>
-          </div>
-        </div>
-      )}
+              Sign Up
+            </Link>
+          </>
+        )}
+      </div>
     </header>
   );
 }

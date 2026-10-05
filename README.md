@@ -25,8 +25,8 @@ This project uses the App Router (`src/app`) and Tailwind CSS.
 
 ## Tech Stack
 
-- Next.js `14.2.14`
-- React `18`
+- Next.js `15.5.27`
+- React `19`
 - Tailwind CSS `3.4`
 - React Icons
 - TypeScript tooling (mixed JS/TS codebase)
@@ -82,7 +82,7 @@ The app is client-heavy and expects public env vars.
 
 ### Optional
 
-- `NEXT_PUBLIC_EXCHANGE_API_KEY`
+- `EXCHANGE_API_KEY`
   - Used by the exchange-rate widget.
   - If missing, a fallback key in code is used.
   - For production, set your own key to avoid quota/rate-limit issues.
@@ -92,7 +92,7 @@ The app is client-heavy and expects public env vars.
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_EXCHANGE_API_KEY=your_exchange_rate_api_key
+EXCHANGE_API_KEY=your_exchange_rate_api_key
 ```
 
 ## Available Scripts
@@ -301,7 +301,7 @@ Check that `localStorage` contains `token` and that browser storage is not block
 4. Add Environment Variables in Project Settings:
    - `NEXT_PUBLIC_API_BASE_URL` = `https://your-api-host.com/api`
    - `NEXT_PUBLIC_API_URL` = `https://your-api-host.com`
-   - `NEXT_PUBLIC_EXCHANGE_API_KEY` = `your_exchange_rate_api_key` (optional but recommended)
+   - `EXCHANGE_API_KEY` = `your_exchange_rate_api_key` (optional but recommended)
 5. Deploy.
 
 ### Option B: Vercel CLI
@@ -318,7 +318,7 @@ Set env vars either in the dashboard or via CLI:
 ```bash
 vercel env add NEXT_PUBLIC_API_BASE_URL production
 vercel env add NEXT_PUBLIC_API_URL production
-vercel env add NEXT_PUBLIC_EXCHANGE_API_KEY production
+vercel env add EXCHANGE_API_KEY production
 ```
 
 ### Files already prepared for Vercel
@@ -342,3 +342,17 @@ vercel env add NEXT_PUBLIC_EXCHANGE_API_KEY production
   - Backend is not allowing the Vercel domain.
 - Remote image blocked by Next.js
   - Missing image hostname in `next.config.mjs`.
+
+## Audit repair rollout
+
+This frontend requires the corresponding `newsapp-server` API changes (paginated news/category lists, reader preferences, saved stories, and source coverage). Deploy the server first and run `python manage.py migrate` before deploying this frontend.
+
+- Set `NEXT_PUBLIC_API_BASE_URL` to the server's `/api` URL at **build time**. Set `CORS_ALLOWED_ORIGINS` on Django to the frontend's HTTPS origin.
+- Optionally set `API_SERVER_URL` to the same API's internal URL for server-side requests. It is not exposed in browser bundles.
+- Rotate the previously exposed exchange-provider credential, then set **server-only** `EXCHANGE_API_KEY` on the Next.js host. Do not prefix this key with `NEXT_PUBLIC_`.
+- Sessions now use HttpOnly, Secure, SameSite=Lax cookies and server-side JWT refresh. Existing users must log in again.
+- Configure `OPENAI_API_KEY` on Django for AI answers; without it, the UI displays stored headlines and an explicit availability message. Political-bias comparisons remain unavailable until a verified classification source is integrated.
+
+Validation: `npm ci`, `npm run lint`, `npm run build`, and `npm audit --omit=dev`.
+
+For a local integration smoke test, run a migrated Django server with at least one article assigned to a category at `127.0.0.1:8101`; build this frontend and start it with `API_SERVER_URL=http://127.0.0.1:8101 npm start -- --hostname 127.0.0.1 --port 3100`. Run `python tests/smoke.py` using Python with `requests` installed. The script creates a temporary local reader and verifies cookies, refresh, authentication, saved stories, preferences, CSRF rejection, API proxy restrictions, AI fallback, and all major page routes. Use an isolated local database, with the exchange-provider key unset, for this test.

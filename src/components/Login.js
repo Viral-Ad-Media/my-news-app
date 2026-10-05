@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildApiUrl } from "../lib/api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -15,12 +14,7 @@ export default function Login() {
     event.preventDefault();
     setError(null);
 
-    const loginUrl = buildApiUrl("/auth/login/");
-    if (!loginUrl) {
-      setError("API base URL is not configured.");
-      return;
-    }
-
+    const loginUrl = "/api/session";
     setLoading(true);
     try {
       const response = await fetch(loginUrl, {
@@ -40,11 +34,8 @@ export default function Login() {
         return;
       }
 
-      const token = data?.key || data?.access;
-      if (token) {
-        localStorage.setItem("token", token);
-      }
-
+      localStorage.removeItem("token");
+      window.dispatchEvent(new Event("news-session"));
       router.push("/");
     } catch {
       setError("Unable to login right now.");

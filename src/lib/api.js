@@ -2,7 +2,9 @@ const trimTrailingSlash = (value) => value.replace(/\/+$/, "");
 
 export function getApiBaseUrl() {
   const configuredBase =
-    process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "";
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "";
 
   if (!configuredBase) {
     return "";
@@ -16,7 +18,9 @@ export function getApiBaseUrl() {
 
 export function getApiOrigin() {
   const configuredOrigin =
-    process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "";
 
   if (!configuredOrigin) {
     return "";
@@ -54,4 +58,12 @@ export function resolveApiAssetUrl(path = "") {
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${apiOrigin}${normalizedPath}`;
+}
+
+export function listItems(data) {
+  return Array.isArray(data)
+    ? data
+    : Array.isArray(data?.results)
+      ? data.results
+      : [];
 }

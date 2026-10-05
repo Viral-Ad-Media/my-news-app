@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "res.cloudinary.com",
-      "newsapp-server-u11s.onrender.com",
+    remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "newsapp-server-u11s.onrender.com" },
     ],
   },
 };
