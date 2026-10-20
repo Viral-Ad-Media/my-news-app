@@ -102,10 +102,19 @@ export default function Header() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="hidden sm:inline text-sm max-w-32 truncate">
-                  {user.username}
-                </span>
-                <Button variant="ghost" onClick={logout} disabled={loggingOut}>
+                <Button
+                  variant={pathname === "/dashboard" ? "secondary" : "outline"}
+                  size="sm"
+                  asChild
+                >
+                  <Link href="/dashboard">
+                    <span>Dashboard</span>
+                    <span className="hidden sm:inline text-muted-foreground max-w-28 truncate">
+                      · {user.username}
+                    </span>
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={logout} disabled={loggingOut}>
                   {loggingOut ? "Logging out…" : "Logout"}
                 </Button>
               </>

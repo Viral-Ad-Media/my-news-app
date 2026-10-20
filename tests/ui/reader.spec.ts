@@ -160,3 +160,33 @@ test("lopsided page renders AllSides Left, Center, and Right comparisons without
     ),
   ).toBeTruthy();
 });
+test("login, forgot password, signup password toggle, and reader dashboard work cleanly", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  const passwordInput = page.locator("#current-password");
+  await expect(passwordInput).toHaveAttribute("type", "password");
+  const showBtn = page.getByRole("button", { name: "Show password" });
+  await showBtn.click();
+  await expect(passwordInput).toHaveAttribute("type", "text");
+  await expect(
+    page.getByRole("checkbox", { name: "Remember me for 30 days" }),
+  ).toBeChecked();
+  await page.getByRole("link", { name: "Forgot password?" }).click();
+  await expect(page).toHaveURL(/forgot-password/);
+  await expect(
+    page.getByRole("heading", { name: "Forgot your password?" }),
+  ).toBeVisible();
+
+  await page.goto("/dashboard");
+  await expect(
+    page.getByRole("heading", { name: "Welcome back, Test reader" }),
+  ).toBeVisible();
+  await expect(page.getByText("My Reading Spectrum")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+});

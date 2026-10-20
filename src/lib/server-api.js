@@ -14,13 +14,14 @@ export function sameOrigin(request) {
   return origin === new URL(request.url).origin;
 }
 
-export function setSession(response, data) {
+export function setSession(response, data, rememberMe = false) {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
   };
+  const refreshMaxAge = rememberMe ? 30 * 86400 : 86400;
   if (data.access)
     response.cookies.set("news_access", data.access, {
       ...options,
@@ -29,7 +30,7 @@ export function setSession(response, data) {
   if (data.refresh)
     response.cookies.set("news_refresh", data.refresh, {
       ...options,
-      maxAge: 86400,
+      maxAge: refreshMaxAge,
     });
 }
 

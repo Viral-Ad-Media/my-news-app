@@ -11,7 +11,7 @@ export async function POST(request) {
   if (!sameOrigin(request))
     return NextResponse.json({ detail: "Invalid origin" }, { status: 403 });
   try {
-    const { username, password } = await request.json();
+    const { username, password, rememberMe } = await request.json();
     if (
       typeof username !== "string" ||
       typeof password !== "string" ||
@@ -41,9 +41,12 @@ export async function POST(request) {
     const data = await upstream.json();
     if (!upstream.ok)
       return NextResponse.json(data, { status: upstream.status });
-    const result = NextResponse.json({ authenticated: true });
+    const result = NextResponse.json({
+      authenticated: true,
+      remembered: Boolean(rememberMe),
+    });
     result.headers.set("Cache-Control", "private, no-store");
-    setSession(result, data);
+    setSession(result, data, Boolean(rememberMe));
     return result;
   } catch {
     return NextResponse.json(
