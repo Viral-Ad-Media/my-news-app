@@ -1,169 +1,153 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "./NewsImage";
-import CoverageBar from "./CoverageBar";
-import { listItems, buildApiUrl, resolveApiAssetUrl } from "../lib/api";
-
-function getTimeAgo(dateString) {
-  const postedAt = new Date(dateString).getTime();
-  if (Number.isNaN(postedAt)) return "Unknown time";
-
-  const diffInHours = Math.max(
-    0,
-    Math.floor((Date.now() - postedAt) / 3600000),
-  );
-  const diffInDays = Math.floor(diffInHours / 24);
-
-  if (diffInDays > 0) {
-    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-  }
-
-  return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
-}
-
-function getArticleImage(article) {
-  const imagePath = article?.image_url || article?.image;
-  return imagePath ? resolveApiAssetUrl(imagePath) : "/images/Placeholder.webp";
-}
-
-function getCategoryLabel(article) {
-  if (!Array.isArray(article?.categories) || article.categories.length === 0) {
-    return "Uncategorized";
-  }
-  return article.categories.map((category) => category.name).join(", ");
-}
+import { ArrowUpRight } from "lucide-react";
+import NewsImage from "./NewsImage";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  formatNewsDate,
+  listItems,
+  buildApiUrl,
+  resolveApiAssetUrl,
+} from "../lib/api";
 
 export default function TopNews() {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    const newsUrl = buildApiUrl("/news/");
-
-    if (!newsUrl) {
-      setError("API base URL is not configured.");
+    setLoading(true);
+    const url = buildApiUrl("/news/?page_size=5");
+    if (!url) {
+      setError("The news service is not configured.");
       setLoading(false);
-      return () => controller.abort();
+      return;
     }
-
-    fetch(newsUrl, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return response.json();
+    fetch(url, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
       })
       .then((data) => {
-        const items = listItems(data);
-        const sortedData = [...items].sort(
-          (a, b) => new Date(b.published_at) - new Date(a.published_at),
-        );
-        setNews(sortedData.slice(0, 5));
-        setError(null);
+        setNews(listItems(data));
+        setError("");
       })
-      .catch((fetchError) => {
-        if (fetchError.name === "AbortError") return;
-        setError("Unable to load top news right now.");
-        setNews([]);
+      .catch((err) => {
+        if (err.name !== "AbortError")
+          setError("We couldn’t load the latest briefing.");
       })
-      .finally(() => setLoading(false));
-
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
-  }, []);
-
-  if (loading) return <p>Loading top news...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
-  if (news.length === 0)
-    return <p className="text-gray-500">No top news available.</p>;
-
-  const mainNews = news[0];
-  const sideNews = news[1];
-  const bottomNews = news.slice(2, 5);
-
+  }, [revision]);
+  if (loading)
+    return (
+      <section
+        aria-label="Loading briefing"
+        role="status"
+        className="rounded-xl bg-muted p-6"
+      >
+        <Skeleton className="h-7 w-2/3" />
+        <Skeleton className="h-7 w-1/2 mt-3" />
+        <Skeleton className="h-16 mt-6" />
+      </section>
+    );
+  if (error)
+    return (
+      <section className="rounded-xl bg-muted p-6">
+        <h2 className="font-semibold">Latest briefing</h2>
+        <p role="alert" className="mt-2">
+          {error}
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => setRevision((v) => v + 1)}
+        >
+          Retry
+        </Button>
+      </section>
+    );
+  if (!news.length)
+    return (
+      <section className="rounded-xl bg-muted p-6">
+        <h2 className="font-semibold">Latest briefing</h2>
+        <p className="mt-2">No stories published yet. Check back soon.</p>
+      </section>
+    );
+  const [lead, ...others] = news;
+  const image = lead.image_url || lead.image;
   return (
-    <div>
-      <h3 className="text-2xl font-bold mb-1">Top News</h3>
-      <div className="flex flex-col space-y-1 mb-6">
-        <div className="h-0.5 w-full bg-gray-700"></div>
-        <div className="h-0.5 w-full bg-gray-400"></div>
-        <div className="h-0.5 w-full bg-gray-200"></div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {mainNews && (
-          <Link href={`/news/${mainNews.id}`} className="col-span-2 relative">
-            <Image
-              src={getArticleImage(mainNews)}
-              alt={mainNews.title}
-              width={1200}
-              height={720}
-              className="w-full h-96 object-cover rounded-md"
-            />
-            <div className="absolute bottom-6 left-6 text-white bg-black bg-opacity-60 p-4 rounded">
-              <span className="bg-red-600 px-2 py-1 rounded text-xs uppercase">
-                {getCategoryLabel(mainNews)}
-              </span>
-              <h3 className="text-4xl font-extrabold mt-2">{mainNews.title}</h3>
-              <CoverageBar sources={mainNews.total_sources} />
-              <p className="text-sm mt-2">
-                {getTimeAgo(mainNews.published_at)} |{" "}
-                {mainNews.location || "Unknown"}
-              </p>
-            </div>
-          </Link>
+    <section aria-labelledby="briefing-title">
+      <h2 id="briefing-title" className="text-lg font-semibold mb-4">
+        Latest briefing
+      </h2>
+      <div className="rounded-xl bg-muted overflow-hidden">
+        {image && (
+          <NewsImage
+            src={resolveApiAssetUrl(image)}
+            alt=""
+            width={1000}
+            height={480}
+            className="w-full aspect-[2/1] object-cover"
+          />
         )}
-
-        {sideNews && (
-          <Link href={`/news/${sideNews.id}`}>
-            <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">
-                {getCategoryLabel(sideNews)}
-              </span>
-              <h4 className="text-xl font-bold mt-2">{sideNews.title}</h4>
-              <CoverageBar sources={sideNews.total_sources} />
-              <Image
-                src={getArticleImage(sideNews)}
-                alt={sideNews.title}
-                width={640}
-                height={360}
-                className="w-full h-40 object-cover mt-4 rounded-md"
-              />
-              <p className="text-sm text-gray-600 mt-2">
-                {getTimeAgo(sideNews.published_at)} |{" "}
-                {sideNews.location || "Unknown"}
-              </p>
-            </div>
+        <article className="p-5 sm:p-7">
+          <p className="text-sm text-muted-foreground mb-3">
+            {lead.categories?.map((c) => c.name).join(" · ") || "News"} ·{" "}
+            {lead.source?.name}
+          </p>
+          <Link href={`/news/${lead.id}`} className="group block">
+            <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight text-balance group-hover:underline underline-offset-4">
+              {lead.title}
+            </h3>
           </Link>
-        )}
+          <p className="mt-4 text-base leading-relaxed max-w-prose">
+            {lead.description}
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <time
+              className="text-sm text-muted-foreground"
+              dateTime={lead.published_at}
+            >
+              {formatNewsDate(lead.published_at)}
+            </time>
+            <Button variant="ghost" asChild className="px-0">
+              <Link href={`/news/${lead.id}`}>
+                Read story
+                <ArrowUpRight aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+        </article>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {bottomNews.map((item) => (
-          <Link key={item.id} href={`/news/${item.id}`}>
-            <div className="relative bg-gray-100 p-4 border rounded-md shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-300">
-              <span className="text-xs text-gray-500">
-                {getCategoryLabel(item)}
-              </span>
-              <h5 className="text-lg font-bold mt-2">{item.title}</h5>
-              <CoverageBar sources={item.total_sources} />
-              <Image
-                src={getArticleImage(item)}
-                alt={item.title}
-                width={640}
-                height={360}
-                className="w-full h-32 object-cover mt-4 rounded-md"
-              />
-              <p className="text-sm text-gray-600 mt-2">
-                {getTimeAgo(item.published_at)} | {item.location || "Unknown"}
-              </p>
-            </div>
-          </Link>
+      <div className="grid sm:grid-cols-2 gap-4 mt-4">
+        {others.slice(0, 2).map((item) => (
+          <article
+            key={item.id}
+            className="rounded-xl bg-muted/60 p-5 flex flex-col gap-3"
+          >
+            <p className="text-sm text-muted-foreground">
+              {item.source?.name} · {item.categories?.[0]?.name || "News"}
+            </p>
+            <Link
+              href={`/news/${item.id}`}
+              className="hover:underline underline-offset-4"
+            >
+              <h3 className="text-lg leading-snug font-semibold">
+                {item.title}
+              </h3>
+            </Link>
+            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
+              {item.description}
+            </p>
+          </article>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

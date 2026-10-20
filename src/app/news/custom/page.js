@@ -1,4 +1,7 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { buildApiUrl, listItems } from "../../../lib/api";
@@ -98,50 +101,51 @@ export default function TopicPreferences() {
           )}
         </p>
       )}
-      <form onSubmit={save}>
+      <form onSubmit={save} className="mt-5 space-y-3 max-w-2xl">
         {loading ? (
           <p>Loading topics…</p>
         ) : (
           topics.map((topic) => (
-            <label className="block my-2" key={topic.id}>
-              <input
-                type="checkbox"
+            <Label
+              className="flex gap-3 items-center p-4 rounded-lg bg-muted/60 cursor-pointer"
+              key={topic.id}
+            >
+              <Checkbox
                 disabled={!ready}
                 checked={selected.includes(topic.id)}
-                onChange={(event) =>
+                onCheckedChange={(checked) =>
                   setSelected(
-                    event.target.checked
+                    checked === true
                       ? [...selected, topic.id]
                       : selected.filter((id) => id !== topic.id),
                   )
                 }
               />{" "}
               {topic.name}
-            </label>
+            </Label>
           ))
         )}
         <div className="flex gap-4 my-3">
-          <button
+          <Button
             type="button"
+            variant="outline"
             disabled={page === 1 || loading}
             onClick={() => setPage(page - 1)}
           >
             Previous topics
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             disabled={!hasNext || loading}
             onClick={() => setPage(page + 1)}
           >
             More topics
-          </button>
+          </Button>
         </div>
-        <button
-          disabled={!ready || busy}
-          className="bg-black text-white px-4 py-2 disabled:opacity-40"
-        >
+        <Button disabled={!ready || busy} className="mt-2">
           {busy ? "Saving…" : "Save Topics"}
-        </button>
+        </Button>
       </form>
       {ready && (
         <NewsList

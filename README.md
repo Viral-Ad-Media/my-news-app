@@ -161,3 +161,14 @@ Public API URL changes require a rebuild. Provider credentials and server-only v
 - **Exchange panel unavailable:** configure the server-only key and inspect provider quota/status. Missing-key 503 is expected.
 - **News image unavailable:** verify the upstream image URL and host; images can fail independently of the news API.
 - **AI unavailable or bias page empty:** configure OpenAI on Django for generated answers; political-bias classification remains unimplemented.
+
+## UI components and motion
+
+The reader uses local shadcn/ui components (Tailwind 3, new-york style) and Radix primitives for forms, navigation, country selection, and saved-story controls. Source-linked news leads the layout; photos appear when supplied by the article. Keyboard focus, mobile menu dismissal, reduced-motion preferences, and dates across time zones are covered by browser checks. See [UI review](docs/ui-review.md) for the design rationale and validation details.
+
+```bash
+npx playwright install chromium
+npm run test:ui
+```
+
+The browser suite mocks API responses and does not modify production data. CI also runs these checks.

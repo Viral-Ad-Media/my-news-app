@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -41,15 +43,23 @@ export default function SaveStoryButton({
   }
   return (
     <span className="inline-flex flex-col">
-      <button
+      <Button
         type="button"
         aria-pressed={saved}
         disabled={busy}
         onClick={toggle}
-        className="text-sm underline disabled:opacity-50"
+        variant={saved ? "secondary" : "outline"}
+        size="sm"
+        className="min-w-24"
+        aria-busy={busy}
       >
+        {saved ? (
+          <BookmarkCheck aria-hidden="true" />
+        ) : (
+          <Bookmark aria-hidden="true" />
+        )}
         {busy ? "Saving…" : saved ? "Unsave" : "Save"}
-      </button>
+      </Button>
       {error && (
         <span role="alert" className="text-red-600 text-xs">
           {error}

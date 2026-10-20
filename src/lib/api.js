@@ -67,3 +67,15 @@ export function listItems(data) {
       ? data.results
       : [];
 }
+
+// Preserve the source's recorded publication date across reader time zones.
+export function formatNewsDate(value) {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return "Date unavailable";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}

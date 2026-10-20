@@ -1,7 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { Menu, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 const links = [
   ["Home", "/"],
   ["My Feed", "/feed"],
@@ -11,10 +31,14 @@ const links = [
   ["Timelines", "/timelines"],
   ["Lopsided", "/lopsided"],
 ];
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [location, setLocation] = useState("ng");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [error, setError] = useState("");
+  const pathname = usePathname();
   useEffect(() => {
     setLocation(localStorage.getItem("news-location") || "ng");
     const update = () =>
@@ -26,93 +50,159 @@ export default function Header() {
     window.addEventListener("news-session", update);
     return () => window.removeEventListener("news-session", update);
   }, []);
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
   async function logout() {
-    const response = await fetch("/api/session", { method: "DELETE" });
-    if (response.ok) {
+    setLoggingOut(true);
+    setError("");
+    try {
+      const response = await fetch("/api/session", { method: "DELETE" });
+      if (!response.ok) throw new Error();
       setUser(null);
       window.dispatchEvent(new Event("news-session"));
       window.location.assign("/");
+    } catch {
+      setError("Unable to log out. Please try again.");
+    } finally {
+      setLoggingOut(false);
     }
   }
-  return (
-    <header className="bg-gray-100 border-b p-4">
-      <div className="container mx-auto flex flex-wrap gap-4 items-center">
-        <Link href="/">
-          <Image
-            src="/images/logo.png"
-            width={120}
-            height={32}
-            alt="AbokiNews"
-          />
+  function navigation(mobile = false) {
+    return links.map(([label, href]) => (
+      <Button
+        key={href}
+        variant={pathname === href ? "secondary" : "ghost"}
+        asChild
+        className={mobile ? "justify-start w-full" : ""}
+      >
+        <Link
+          href={href}
+          aria-current={pathname === href ? "page" : undefined}
+          onClick={() => setOpen(false)}
+        >
+          {label}
         </Link>
-        <button
-          className="lg:hidden underline"
-          aria-expanded={open}
-          aria-controls="news-nav"
-          onClick={() => setOpen(!open)}
-        >
-          Menu
-        </button>
+      </Button>
+    ));
+  }
+  return (
+    <header className="border-b bg-background">
+      <div className="w-full max-w-[1100px] mx-auto px-4 py-4 sm:px-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Link href="/" aria-label="AbokiNews home" className="mr-auto">
+            <Image
+              src="/images/logo.png"
+              width={120}
+              height={32}
+              alt="AbokiNews"
+              priority
+            />
+          </Link>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <span className="hidden sm:inline text-sm max-w-32 truncate">
+                  {user.username}
+                </span>
+                <Button variant="ghost" onClick={logout} disabled={loggingOut}>
+                  {loggingOut ? "Logging out…" : "Logout"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="lg:hidden"
+                  aria-label="Open navigation"
+                >
+                  <Menu aria-hidden="true" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="news-sheet w-[min(88vw,360px)]"
+              >
+                <SheetHeader>
+                  <SheetTitle>Explore AbokiNews</SheetTitle>
+                  <SheetDescription>
+                    Your stories, topics, and saved news.
+                  </SheetDescription>
+                </SheetHeader>
+                <nav
+                  aria-label="Mobile navigation"
+                  className="mt-6 flex flex-col gap-1"
+                >
+                  {navigation(true)}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+          <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center pt-2">
+            <form
+              action="/search"
+              className="flex flex-1 gap-2 min-w-0"
+              role="search"
+            >
+              <Label htmlFor="header-search" className="sr-only">
+                Search stories
+              </Label>
+              <Input
+                id="header-search"
+                name="q"
+                maxLength={200}
+                placeholder="Search stories"
+                type="search"
+                className="min-w-0"
+              />
+              <Button type="submit" variant="outline" aria-label="Search">
+                <Search aria-hidden="true" />
+                <span className="hidden sm:inline">Search</span>
+              </Button>
+            </form>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="news-country">Country</Label>
+              <Select
+                value={location}
+                onValueChange={(value) => {
+                  setLocation(value);
+                  localStorage.setItem("news-location", value);
+                  window.dispatchEvent(new Event("news-location"));
+                }}
+              >
+                <SelectTrigger id="news-country" className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="news-select">
+                  <SelectItem value="ng">Nigeria</SelectItem>
+                  <SelectItem value="us">United States</SelectItem>
+                  <SelectItem value="gb">United Kingdom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
         <nav
-          id="news-nav"
-          className={`${open ? "flex" : "hidden"} lg:flex flex-wrap gap-4`}
+          aria-label="Main navigation"
+          className="hidden lg:flex flex-wrap gap-1 mt-3"
         >
-          {links.map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="hover:underline"
-            >
-              {label}
-            </Link>
-          ))}
+          {navigation()}
         </nav>
-        <form action="/search" className="flex gap-2">
-          <input
-            name="q"
-            maxLength={200}
-            aria-label="Search stories"
-            placeholder="Search stories"
-            className="border p-1 w-36"
-          />
-          <button className="underline">Search</button>
-        </form>
-        <label className="text-sm">
-          Country{" "}
-          <select
-            value={location}
-            onChange={(event) => {
-              const value = event.target.value;
-              setLocation(value);
-              localStorage.setItem("news-location", value);
-              window.dispatchEvent(new Event("news-location"));
-            }}
-          >
-            <option value="ng">Nigeria</option>
-            <option value="us">United States</option>
-            <option value="gb">United Kingdom</option>
-          </select>
-        </label>
-        {user ? (
-          <>
-            <span>{user.username}</span>
-            <button onClick={logout} className="underline">
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link href="/login" className="underline">
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-black text-white px-3 py-1 rounded"
-            >
-              Sign Up
-            </Link>
-          </>
+        {error && (
+          <p role="alert" className="text-sm text-destructive mt-2">
+            {error}
+          </p>
         )}
       </div>
     </header>

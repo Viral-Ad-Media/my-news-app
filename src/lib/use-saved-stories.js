@@ -14,7 +14,7 @@ export default function useSavedStories(ids) {
       signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : { saved_ids: [] }))
-      .then((data) => setSavedIds(data.saved_ids))
+      .then((data) => setSavedIds(Array.isArray(data.saved_ids) ? data.saved_ids : []))
       .catch(() => {});
     return () => controller.abort();
   }, [key]);
