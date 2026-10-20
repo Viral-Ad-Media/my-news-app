@@ -93,7 +93,11 @@ export default function Login() {
         localStorage.removeItem(REMEMBER_USER_KEY);
       }
       window.dispatchEvent(new Event("news-session"));
-      router.push("/dashboard");
+      if (data?.is_superuser || data?.is_staff) {
+        router.push("/superadmin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       setError("Unable to sign in right now. Please try again.");
     } finally {
@@ -128,7 +132,7 @@ export default function Login() {
             >
               <div className="space-y-1.5">
                 <Label htmlFor="username" className="font-medium">
-                  Username
+                  Username or Email
                 </Label>
                 <div className="relative">
                   <User
@@ -155,7 +159,7 @@ export default function Login() {
                     autoCapitalize="off"
                     spellCheck={false}
                     enterKeyHint="next"
-                    placeholder="Enter your username"
+                    placeholder="Enter your username or email"
                     className="pl-9 h-11 text-base"
                     required
                   />

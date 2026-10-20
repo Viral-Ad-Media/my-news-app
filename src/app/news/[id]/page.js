@@ -10,6 +10,7 @@ import RightSidebar from "../../../components/RightSidebar";
 import StoryCoverage from "../../../components/StoryCoverage";
 import RelatedNews from "../../../components/RelatedNews";
 import CoverageBar from "../../../components/CoverageBar";
+import ArticleTranslator from "../../../components/ArticleTranslator";
 import { formatNewsDate, getArticleImageUrl } from "../../../lib/api";
 
 async function fetchArticleAndRelatedNews(articleId) {
@@ -69,14 +70,14 @@ export default async function NewsDetails({ params }) {
     .filter(Boolean);
 
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        <div className="md:col-span-3 min-w-0 order-2 md:order-1">
+    <div className="w-full min-w-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(210px,245px)_minmax(0,1fr)_minmax(220px,260px)] xl:grid-cols-[255px_minmax(0,1fr)_270px] gap-5 sm:gap-6 items-start">
+        <div className="md:col-span-1 lg:col-span-1 min-w-0 order-2 lg:order-1">
           <LeftSidebar articleId={articleId} />
         </div>
 
-        <article className="md:col-span-6 min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6 order-1 md:order-2">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
+        <article className="md:col-span-2 lg:col-span-1 min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6 lg:p-8 order-1 lg:order-2 break-words">
+          <div className="pill-balance items-center gap-2 mb-3">
             {Array.isArray(article.categories) &&
               article.categories.map((cat) => (
                 <Link key={cat.id} href={`/categories/${cat.id}`}>
@@ -92,13 +93,13 @@ export default async function NewsDetails({ params }) {
             )}
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight mb-4">
+          <h1 className="fluid-article-title font-bold tracking-tight leading-tight text-balance mb-4">
             {article.title}
           </h1>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-border text-xs text-muted-foreground">
-            <div className="space-y-0.5">
-              <div className="font-semibold text-foreground">
+            <div className="space-y-0.5 min-w-0">
+              <div className="font-semibold text-foreground break-words">
                 {article.source?.name || "AbokiNews Desk"}
                 {article.author ? ` · By ${article.author}` : ""}
               </div>
@@ -108,7 +109,7 @@ export default async function NewsDetails({ params }) {
                 </time>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {article.article_url && (
                 <a
                   href={article.article_url}
@@ -125,17 +126,27 @@ export default async function NewsDetails({ params }) {
           </div>
 
           {articleImage && (
-            <Image
-              src={articleImage}
-              alt={article.title}
-              width={800}
-              height={450}
-              className="w-full h-auto object-cover rounded-lg mb-5"
-            />
+            <div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip mb-6 bg-muted/30">
+              <Image
+                src={articleImage}
+                alt={article.title}
+                width={1000}
+                height={400}
+                className="block w-full h-full object-cover object-center"
+              />
+            </div>
           )}
 
           <div className="mb-5 rounded-lg border border-border bg-muted/30 p-3.5">
             <CoverageBar article={article} compact={true} />
+          </div>
+
+          <div className="mb-5">
+            <ArticleTranslator
+              title={article.title}
+              description={article.description}
+              paragraphs={paragraphs}
+            />
           </div>
 
           {article.description &&
@@ -184,7 +195,7 @@ export default async function NewsDetails({ params }) {
           )}
         </article>
 
-        <div className="md:col-span-3 min-w-0 order-3">
+        <div className="md:col-span-1 lg:col-span-1 min-w-0 order-3">
           <RightSidebar />
         </div>
       </div>

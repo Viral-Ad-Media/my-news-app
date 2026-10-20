@@ -13,6 +13,14 @@ const geistSans = localFont({
 export const metadata: Metadata = {
   title: "AbokiNews",
   description: "AI Powered News App",
+  alternates: {
+    types: {
+      "application/rss+xml": [
+        { url: "/rss.xml", title: "AbokiNews — All Stories RSS 2.0 Feed" },
+        { url: "/rss.xml?location=ng", title: "AbokiNews — Nigeria Desk RSS Feed" },
+      ],
+    },
+  },
 };
 
 export default function RootLayout({
@@ -21,14 +29,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=localStorage.getItem("color-scheme");var m=document.querySelector('meta[name="color-scheme"]');if(m)m.content=s||"light dark";var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.classList.toggle("light",s==="light");}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} antialiased`}>
-        <div className="">
+        <div className="min-h-dvh flex flex-col overflow-x-clip">
           <InteractionPreferences />
           <Header />
 
           {/* Main Content */}
-          <main className="w-full max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <main className="flex-1 w-full max-w-[1600px] mx-auto px-3.5 py-5 sm:px-6 sm:py-6 lg:px-8">
             {children}
           </main>
 

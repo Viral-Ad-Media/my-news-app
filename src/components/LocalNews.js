@@ -86,7 +86,7 @@ export default function LocalNews() {
         </div>
 
         <div
-          className="flex flex-wrap gap-2 pt-3 border-t border-border/70"
+          className="pill-balance gap-2 pt-3 border-t border-border/70"
           role="group"
           aria-label="Select regional news desk"
         >

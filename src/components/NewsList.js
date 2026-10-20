@@ -101,14 +101,14 @@ export default function NewsList({
       ) : (
         <>
           {!articles.length && <p>No stories available for these filters.</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
             {articles.map((article) => (
               <Card
                 key={article.id}
-                className="news-card bg-muted/50 border-0 shadow-none"
+                className="news-card bg-muted/50 border-0 shadow-none min-w-0"
               >
                 <CardContent className="p-4 h-full">
-                  <article className="flex h-full flex-col">
+                  <article className="flex h-full flex-col min-w-0">
                     <Link href={`/news/${article.id}`}>
                       {getArticleImageUrl(article) && (
                         <NewsImage
@@ -116,17 +116,17 @@ export default function NewsList({
                           alt={article.title}
                           width={640}
                           height={360}
-                          className="w-full h-44 object-cover rounded"
+                          className="w-full aspect-[16/9] object-cover rounded"
                         />
                       )}
-                      <h3 className="font-semibold text-lg mt-3 leading-snug">
+                      <h3 className="font-semibold text-base sm:text-lg mt-3 leading-snug text-balance">
                         {article.title}
                       </h3>
                     </Link>
-                    <p className="text-base my-3 leading-relaxed">
+                    <p className="text-sm sm:text-base my-3 leading-relaxed">
                       {article.description}
                     </p>
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {article.source?.name} ·{" "}
                       {formatNewsDate(article.published_at)}
                     </p>
@@ -151,7 +151,7 @@ export default function NewsList({
               </Card>
             ))}
           </div>
-          <div className="flex gap-4 items-center mt-4">
+          <div className="flex flex-wrap gap-3 sm:gap-4 items-center justify-between sm:justify-start mt-4">
             <Button
               disabled={page === 1 || loading}
               variant="outline"

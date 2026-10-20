@@ -11,8 +11,10 @@ import {
   buildApiUrl,
   getArticleImageUrl,
 } from "../lib/api";
+import { useLanguage } from "../lib/i18n";
 
 export default function TopNews() {
+  const { t } = useLanguage();
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,7 +86,7 @@ export default function TopNews() {
   return (
     <section aria-labelledby="briefing-title">
       <h2 id="briefing-title" className="text-lg font-semibold mb-4">
-        Latest briefing
+        {t("briefing_title", "Latest briefing")}
       </h2>
       <div className="rounded-xl bg-muted overflow-hidden">
         {image && (
@@ -93,45 +95,45 @@ export default function TopNews() {
             alt=""
             width={1000}
             height={480}
-            className="w-full aspect-[2/1] object-cover"
+            className="w-full aspect-[16/9] sm:aspect-[2/1] object-cover"
           />
         )}
-        <article className="p-5 sm:p-7">
-          <p className="text-sm text-muted-foreground mb-3">
+        <article className="p-4 sm:p-7 min-w-0">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-2.5 sm:mb-3">
             {lead.categories?.map((c) => c.name).join(" · ") || "News"} ·{" "}
             {lead.source?.name}
           </p>
           <Link href={`/news/${lead.id}`} className="group block">
-            <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight text-balance group-hover:underline underline-offset-4">
+            <h3 className="fluid-hero-title font-semibold tracking-tight leading-tight text-balance group-hover:underline underline-offset-4">
               {lead.title}
             </h3>
           </Link>
-          <p className="mt-4 text-base leading-relaxed max-w-4xl">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base leading-relaxed max-w-4xl">
             {lead.description}
           </p>
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-4 sm:mt-5 flex flex-wrap items-center justify-between gap-3">
             <time
-              className="text-sm text-muted-foreground"
+              className="text-xs sm:text-sm text-muted-foreground"
               dateTime={lead.published_at}
             >
               {formatNewsDate(lead.published_at)}
             </time>
             <Button variant="ghost" asChild className="px-0">
               <Link href={`/news/${lead.id}`}>
-                Read story
+                {t("read_story", "Read story")}
                 <ArrowUpRight aria-hidden="true" />
               </Link>
             </Button>
           </div>
         </article>
       </div>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
         {others.slice(0, 3).map((item) => {
           const itemImage = getArticleImageUrl(item);
           return (
             <article
               key={item.id}
-              className="rounded-xl bg-muted/60 overflow-hidden flex flex-col"
+              className="rounded-xl bg-muted/60 overflow-hidden flex flex-col min-w-0"
             >
               {itemImage && (
                 <Link href={`/news/${item.id}`} className="block">
@@ -139,8 +141,8 @@ export default function TopNews() {
                     src={itemImage}
                     alt=""
                     width={480}
-                    height={260}
-                    className="w-full h-36 object-cover"
+                    height={270}
+                    className="w-full aspect-[16/9] object-cover"
                   />
                 </Link>
               )}

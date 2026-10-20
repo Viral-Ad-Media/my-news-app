@@ -248,6 +248,14 @@ export default function ReaderDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {(user.is_superuser || user.is_staff) && (
+              <Button variant="default" size="sm" asChild>
+                <Link href="/superadmin">
+                  <LayoutDashboard className="h-4 w-4 mr-1" aria-hidden="true" />
+                  Superadmin Console
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" asChild>
               <Link href="/lopsided">
                 <Scale className="h-4 w-4 mr-1" aria-hidden="true" />
@@ -326,7 +334,7 @@ export default function ReaderDashboard() {
         <div
           role="group"
           aria-label="Dashboard sections"
-          className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-border"
+          className="pill-balance gap-2 mt-6 pt-4 border-t border-border"
         >
           {DASHBOARD_VIEWS.map((view) => {
             const Icon = view.icon;

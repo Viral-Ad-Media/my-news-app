@@ -44,6 +44,10 @@ export async function POST(request) {
     const result = NextResponse.json({
       authenticated: true,
       remembered: Boolean(rememberMe),
+      username: data.username || username,
+      email: data.email || "",
+      is_staff: Boolean(data.is_staff),
+      is_superuser: Boolean(data.is_superuser),
     });
     result.headers.set("Cache-Control", "private, no-store");
     setSession(result, data, Boolean(rememberMe));

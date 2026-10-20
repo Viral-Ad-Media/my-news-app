@@ -205,4 +205,20 @@ test("login, forgot password, signup password toggle, and reader dashboard work 
   await expect(
     page.getByRole("button", { name: "United Kingdom & Europe" }),
   ).toBeVisible();
+
+  const themeBtn = page.getByRole("button", {
+    name: /Switch to (dark|light) theme/i,
+  });
+  await expect(themeBtn).toBeVisible();
+  await themeBtn.click();
+  expect(
+    await page.evaluate(() =>
+      document.documentElement.classList.contains("dark"),
+    ),
+  ).toBe(true);
+
+  const langSelect = page.getByLabel("Language").first();
+  await expect(langSelect).toBeVisible();
+  await langSelect.selectOption("fr");
+  expect(await page.evaluate(() => document.documentElement.lang)).toBe("fr");
 });

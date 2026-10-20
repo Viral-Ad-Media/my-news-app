@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "../lib/i18n";
 export default function AskVTAI() {
+  const { t } = useLanguage();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [error, setError] = useState("");
@@ -30,10 +32,10 @@ export default function AskVTAI() {
     }
   }
   return (
-    <section className="bg-gray-50 p-4 rounded mb-6">
-      <h2 className="text-2xl font-bold">Ask Aboki AI</h2>
+    <section className="rounded-xl border border-border bg-muted/40 p-4 mb-6">
+      <h2 className="text-2xl font-bold">{t("ask_ai_title", "Ask Aboki AI")}</h2>
       <p className="text-sm my-2">
-        Answers use stories stored in this news app.
+        {t("ask_ai_desc", "Answers use stories stored in this news app.")}
       </p>
       <Button
         variant="link"
@@ -41,7 +43,7 @@ export default function AskVTAI() {
         type="button"
         onClick={() => setQuestion("What are the latest stored headlines?")}
       >
-        What are the latest headlines?
+        {t("ask_ai_prompt", "What are the latest headlines?")}
       </Button>
       <form onSubmit={ask}>
         <label htmlFor="news-question" className="sr-only">
@@ -54,7 +56,7 @@ export default function AskVTAI() {
           maxLength={500}
           required
           className="border p-2 w-full"
-          placeholder="Ask a question"
+          placeholder={t("ask_ai_placeholder", "Ask a question")}
         />
         <Button
           disabled={loading}
@@ -62,7 +64,9 @@ export default function AskVTAI() {
           className="mt-2 min-w-24"
           aria-busy={loading}
         >
-          {loading ? "Thinking…" : "Ask"}
+          {loading
+            ? t("ask_ai_thinking", "Thinking…")
+            : t("ask_ai_btn", "Ask")}
         </Button>
       </form>
       {error && (

@@ -14,10 +14,23 @@ async function proxy(request, { params }) {
     saved: ["GET"],
     preferences: ["GET", "PUT"],
     ask: ["POST"],
+    "superadmin/overview": ["GET"],
+    "superadmin/articles": ["POST"],
+    "superadmin/categories": ["POST"],
+    "superadmin/actions": ["POST"],
   };
-  const methods = /^saved\/\d+$/.test(path)
-    ? ["GET", "PUT", "DELETE"]
-    : allowed[path];
+  let methods = allowed[path];
+  if (!methods) {
+    if (/^saved\/\d+$/.test(path)) {
+      methods = ["GET", "PUT", "DELETE"];
+    } else if (/^superadmin\/articles\/\d+$/.test(path)) {
+      methods = ["PUT", "DELETE"];
+    } else if (/^superadmin\/categories\/\d+$/.test(path)) {
+      methods = ["DELETE"];
+    } else if (/^superadmin\/users\/\d+$/.test(path)) {
+      methods = ["PUT"];
+    }
+  }
   if (!methods?.includes(request.method))
     return NextResponse.json({ detail: "Not found" }, { status: 404 });
   if (request.method !== "GET" && !sameOrigin(request))

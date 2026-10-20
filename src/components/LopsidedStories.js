@@ -524,7 +524,7 @@ export default function LopsidedStories({ mode = "widget" }) {
         <div
           role="group"
           aria-label="Filter roundups by coverage bias"
-          className="flex flex-wrap gap-1.5 my-4"
+          className="pill-balance gap-1.5 my-4"
         >
           {BIAS_FILTERS.slice(0, 5).map((f) => {
             const active = biasFilter === f.key;
@@ -675,7 +675,7 @@ export default function LopsidedStories({ mode = "widget" }) {
           <div
             role="group"
             aria-label="Filter by media bias classification"
-            className="flex flex-wrap items-center gap-1.5"
+            className="pill-balance items-center gap-1.5"
           >
             <span className="text-xs font-semibold text-muted-foreground mr-1 inline-flex items-center gap-1">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
