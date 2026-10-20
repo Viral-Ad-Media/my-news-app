@@ -6,9 +6,7 @@ import SimilarNewsTopics from "./SimilarNewsTopics";
 import { listItems, buildApiUrl } from "../lib/api";
 
 export default function RightSidebar() {
-  const [activeTab, setActiveTab] = useState("Last Day");
   const [categories, setCategories] = useState([]);
-  const newsSummaryTabs = ["Last Day", "Last Week", "Last Month"];
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -44,11 +42,7 @@ export default function RightSidebar() {
   return (
     <div>
       {/* Ask VT AI Section */}
-      <AskVTAI
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        newsSummaryTabs={newsSummaryTabs}
-      />
+      <AskVTAI />
 
       {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 

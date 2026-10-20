@@ -1,7 +1,15 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { buildApiUrl, listItems, resolveApiAssetUrl } from "../lib/api";
+import {
+  formatNewsDate,
+  buildApiUrl,
+  listItems,
+  resolveApiAssetUrl,
+} from "../lib/api";
 import useSavedStories from "../lib/use-saved-stories";
 import NewsImage from "./NewsImage";
 import SaveStoryButton from "./SaveStoryButton";
@@ -54,13 +62,35 @@ export default function NewsList({
   const articles = listItems(data);
   const savedIds = useSavedStories(articles.map((article) => article.id));
   return (
-    <section className="my-6">
+    <section className="my-6" aria-busy={loading}>
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       {loading ? (
-        <p>Loading stories…</p>
+        <div
+          role="status"
+          aria-label="Loading stories"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        >
+          {[1, 2, 3].map((id) => (
+            <Card key={id} aria-hidden="true">
+              <CardContent className="p-4">
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-6 mt-3 w-4/5" />
+                <Skeleton className="h-4 mt-2 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : error ? (
         <p role="alert">
           {error}{" "}
+          <Button
+            variant="outline"
+            type="button"
+            className="ml-2"
+            onClick={() => setReload((v) => v + 1)}
+          >
+            Retry
+          </Button>
           {privateFeed && (
             <Link className="underline" href="/login">
               Login
@@ -70,53 +100,71 @@ export default function NewsList({
       ) : (
         <>
           {!articles.length && <p>No stories available for these filters.</p>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {articles.map((article) => (
-              <article key={article.id} className="border rounded p-4">
-                <Link href={`/news/${article.id}`}>
-                  <NewsImage
-                    src={
-                      resolveApiAssetUrl(article.image_url || article.image) ||
-                      "/images/Placeholder.webp"
-                    }
-                    alt={article.title}
-                    width={640}
-                    height={360}
-                    className="w-full h-40 object-cover rounded"
-                  />
-                  <h3 className="font-bold text-lg mt-3">{article.title}</h3>
-                </Link>
-                <p className="text-sm my-2">{article.description}</p>
-                <p className="text-xs text-gray-600 mb-2">
-                  {article.source?.name} ·{" "}
-                  {new Date(article.published_at).toLocaleDateString()}
-                </p>
-                <SaveStoryButton
-                  articleId={article.id}
-                  initiallySaved={saved || savedIds.includes(article.id)}
-                  onChange={() => {
-                    if (saved) setReload((value) => value + 1);
-                  }}
-                />
-              </article>
+              <Card
+                key={article.id}
+                className="news-card bg-muted/50 border-0 shadow-none"
+              >
+                <CardContent className="p-4 h-full">
+                  <article className="flex h-full flex-col">
+                    <Link href={`/news/${article.id}`}>
+                      {(article.image_url || article.image) && (
+                        <NewsImage
+                          src={
+                            resolveApiAssetUrl(
+                              article.image_url || article.image,
+                            ) || "/images/Placeholder.webp"
+                          }
+                          alt={article.title}
+                          width={640}
+                          height={360}
+                          className="w-full h-40 object-cover rounded"
+                        />
+                      )}
+                      <h3 className="font-semibold text-lg mt-3 leading-snug">
+                        {article.title}
+                      </h3>
+                    </Link>
+                    <p className="text-base my-3 leading-relaxed">
+                      {article.description}
+                    </p>
+                    <p className="text-xs text-gray-600 mb-2">
+                      {article.source?.name} ·{" "}
+                      {formatNewsDate(article.published_at)}
+                    </p>
+                    <SaveStoryButton
+                      articleId={article.id}
+                      initiallySaved={saved || savedIds.includes(article.id)}
+                      onChange={() => {
+                        if (saved) setReload((value) => value + 1);
+                      }}
+                    />
+                  </article>
+                </CardContent>
+              </Card>
             ))}
           </div>
           <div className="flex gap-4 items-center mt-4">
-            <button
-              disabled={page === 1}
-              className="underline disabled:opacity-40"
+            <Button
+              disabled={page === 1 || loading}
+              variant="outline"
+              type="button"
               onClick={() => setPage(page - 1)}
             >
               Previous
-            </button>
-            <span>Page {page}</span>
-            <button
-              disabled={!data?.next}
-              className="underline disabled:opacity-40"
+            </Button>
+            <span aria-live="polite" className="text-sm tabular-nums">
+              Page {page}
+            </span>
+            <Button
+              disabled={!data?.next || loading}
+              variant="outline"
+              type="button"
               onClick={() => setPage(page + 1)}
             >
               Next
-            </button>
+            </Button>
           </div>
         </>
       )}

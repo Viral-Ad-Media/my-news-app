@@ -42,7 +42,7 @@ export default function RelatedNews({ articles }) {
         {relatedArticles.map((news) => (
           <div
             key={news.id}
-            className="bg-white p-4 border rounded-lg shadow-sm"
+            className="bg-white p-4 border rounded-lg "
           >
             {/* Header with Categories and Bookmark */}
             <div className="flex justify-between items-center mb-2">

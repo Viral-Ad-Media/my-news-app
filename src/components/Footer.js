@@ -2,7 +2,7 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="border-t p-6 mt-8">
-      <div className="container mx-auto flex flex-wrap gap-6">
+      <div className="w-full max-w-[1100px] mx-auto flex flex-wrap gap-6">
         <span>AbokiNews</span>
         <Link href="/feed">My Feed</Link>
         <Link href="/news/saved">Saved Stories</Link>

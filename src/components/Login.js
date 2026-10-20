@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -45,46 +49,50 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-gray-100 p-6 rounded-md shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Login</h2>
-      <form onSubmit={handleLogin}>
-        <div className="mb-4">
-          <label htmlFor="username" className="block text-gray-700">
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            className="w-full px-4 py-2 border rounded"
-            autoComplete="username"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="password" className="block text-gray-700">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="w-full px-4 py-2 border rounded"
-            autoComplete="current-password"
-            required
-          />
-        </div>
-        {error && <p className="text-red-500 mb-3">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-500 text-white py-2 px-4 rounded disabled:opacity-70"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-    </div>
+    <Card className="max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <Label htmlFor="username" className="block text-gray-700">
+              Username
+            </Label>
+            <Input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              aria-invalid={Boolean(error)}
+              autoComplete="username"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <Label htmlFor="password" className="block text-gray-700">
+              Password
+            </Label>
+            <Input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(error)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
+          {error && (
+            <p role="alert" className="text-destructive mb-3">
+              {error}
+            </p>
+          )}
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Logging in..." : "Login"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

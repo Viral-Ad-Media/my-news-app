@@ -1,4 +1,5 @@
 "use client";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listItems, buildApiUrl } from "../lib/api";
@@ -47,52 +48,46 @@ export default function NewsSummary({ activeTab, setActiveTab }) {
   const newsSummaryTabs = ["Last Day", "Last Week", "Last Month"];
 
   return (
-    <div>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <h3 className="text-2xl font-bold mb-1">View News Summary</h3>
       <div className="flex flex-col space-y-1 mb-6">
         <div className="h-0.5 w-full bg-gray-700"></div>
         <div className="h-0.5 w-full bg-gray-400"></div>
         <div className="h-0.5 w-full bg-gray-200"></div>
       </div>
-      <div className="flex space-x-2 mb-4">
+      <TabsList aria-label="News summary period" className="max-w-full">
         {newsSummaryTabs.map((tab) => (
-          <button
-            key={tab}
-            className={`text-xs px-3 py-1 rounded-full ${
-              activeTab === tab
-                ? "bg-black text-white"
-                : "bg-gray-200 text-gray-800"
-            }`}
-            onClick={() => setActiveTab(tab)}
-          >
+          <TabsTrigger key={tab} value={tab}>
             {tab}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
+      </TabsList>
 
-      {/* Displaying News Summary */}
-      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
-      <div className="space-y-2">
-        {newsSummary.map((news) => (
-          <p key={news.id} className="text-sm text-gray-600 mb-2">
-            <Link
-              href={`/news/${news.id}`}
-              className="font-medium text-gray-500 hover:underline"
-            >
-              {news.title}
-            </Link>
-            <span className="ml-2 text-gray-500">
-              {news.summary || news.description}
-            </span>
-          </p>
-        ))}
-      </div>
-      <p className="text-xs text-gray-500 mt-2">
-        Updated {activeTab.toLowerCase()}
-      </p>
-      <Link href="/" className="text-blue-500 hover:underline text-sm">
-        Show More &rarr;
-      </Link>
-    </div>
+      <TabsContent value={activeTab}>
+        {/* Displaying News Summary */}
+        {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+        <div className="space-y-2">
+          {newsSummary.map((news) => (
+            <p key={news.id} className="text-sm text-gray-600 mb-2">
+              <Link
+                href={`/news/${news.id}`}
+                className="font-medium text-gray-500 hover:underline"
+              >
+                {news.title}
+              </Link>
+              <span className="ml-2 text-gray-500">
+                {news.summary || news.description}
+              </span>
+            </p>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Updated {activeTab.toLowerCase()}
+        </p>
+        <Link href="/" className="text-blue-500 hover:underline text-sm">
+          Show More &rarr;
+        </Link>
+      </TabsContent>
+    </Tabs>
   );
 }

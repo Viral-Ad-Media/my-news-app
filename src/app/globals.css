@@ -2,19 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 89%;
+    --input: 0 0% 80%;
+    --ring: 0 0% 20%;
+    --radius: 0.625rem;
+    --ease-out-ui: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  }
+  a:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 4px;
+    border-radius: 3px;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .ui-press {
+    transition:
+      transform 140ms var(--ease-out-ui),
+      background-color 140ms ease,
+      color 140ms ease,
+      border-color 140ms ease;
+  }
+  .ui-press:active:not(:focus-visible):not(:disabled) {
+    transform: scale(0.97);
+  }
+  .news-sheet[data-state="open"],
+  .news-sheet-overlay[data-state="open"] {
+    animation-duration: 220ms;
+    animation-timing-function: var(--ease-out-ui);
+  }
+  .news-sheet[data-state="closed"],
+  .news-sheet-overlay[data-state="closed"] {
+    animation-duration: 140ms;
+    animation-timing-function: var(--ease-out-ui);
+  }
+  .news-select {
+    transform-origin: var(--radix-select-content-transform-origin);
+    animation-duration: 160ms;
+    animation-timing-function: var(--ease-out-ui);
+  }
+  /* Frequent reading/filtering actions stay immediate; no stagger on story grids. */
+  [data-input-mode="keyboard"] .ui-press {
+    transition: none;
+    transform: none;
+  }
+  [data-input-mode="keyboard"] .news-sheet,
+  [data-input-mode="keyboard"] .news-sheet-overlay,
+  [data-input-mode="keyboard"] .news-select {
+    animation: none !important;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .news-card:hover {
+      border-color: hsl(var(--foreground) / 0.3);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-press {
+      transition: none;
+    }
+    .ui-press:active:not(:focus-visible):not(:disabled) {
+      transform: none;
+    }
+    .news-sheet,
+    .news-sheet-overlay,
+    .news-select {
+      animation: none !important;
+    }
   }
 }
