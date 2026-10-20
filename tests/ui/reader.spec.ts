@@ -189,4 +189,20 @@ test("login, forgot password, signup password toggle, and reader dashboard work 
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+
+  await page.goto("/timelines");
+  await expect(
+    page.getByRole("heading", { name: "News Timeline & Wire Archive" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Last 24 Hours" }),
+  ).toBeVisible();
+
+  await page.goto("/local-news");
+  await expect(
+    page.getByRole("heading", { name: "Regional & Local News Desks" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "United Kingdom & Europe" }),
+  ).toBeVisible();
 });

@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import Image from "../../../components/NewsImage";
 import SaveStoryButton from "../../../components/SaveStoryButton";
 import { notFound } from "next/navigation";
@@ -6,7 +9,8 @@ import LeftSidebar from "../../../components/LeftSidebar";
 import RightSidebar from "../../../components/RightSidebar";
 import StoryCoverage from "../../../components/StoryCoverage";
 import RelatedNews from "../../../components/RelatedNews";
-import { resolveApiAssetUrl } from "../../../lib/api";
+import CoverageBar from "../../../components/CoverageBar";
+import { formatNewsDate, resolveApiAssetUrl } from "../../../lib/api";
 
 async function fetchArticleAndRelatedNews(articleId) {
   const articleUrl = buildServerApiUrl(`/news/${articleId}/`);
@@ -51,7 +55,7 @@ export default async function NewsDetails({ params }) {
 
   if (!article) {
     return (
-      <div className="text-center text-gray-500">
+      <div className="text-center text-muted-foreground py-12">
         <p>The news service is temporarily unavailable.</p>
       </div>
     );
@@ -59,66 +63,134 @@ export default async function NewsDetails({ params }) {
 
   const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
   const articleImage = article.image_url || article.image;
+  const paragraphs = String(article.content || article.description || "")
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   return (
-    <div className="container mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="col-span-3">
+    <div className="w-full">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        <div className="md:col-span-3 min-w-0 order-2 md:order-1">
           <LeftSidebar articleId={articleId} />
         </div>
 
-        <main className="col-span-6 bg-white p-6">
+        <article className="md:col-span-6 min-w-0 rounded-xl border border-border bg-card p-5 sm:p-6 order-1 md:order-2">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {Array.isArray(article.categories) &&
+              article.categories.map((cat) => (
+                <Link key={cat.id} href={`/categories/${cat.id}`}>
+                  <Badge variant="secondary" className="text-xs">
+                    {cat.name}
+                  </Badge>
+                </Link>
+              ))}
+            {article.location && (
+              <Badge variant="outline" className="uppercase text-[10px]">
+                {article.location}
+              </Badge>
+            )}
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight mb-4">
+            {article.title}
+          </h1>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-border text-xs text-muted-foreground">
+            <div className="space-y-0.5">
+              <div className="font-semibold text-foreground">
+                {article.source?.name || "AbokiNews Desk"}
+                {article.author ? ` · By ${article.author}` : ""}
+              </div>
+              <div>
+                <time dateTime={article.published_at}>
+                  {formatNewsDate(article.published_at)}
+                </time>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {article.article_url && (
+                <a
+                  href={article.article_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-foreground hover:underline underline-offset-4 px-2.5 py-1.5 rounded-md border border-border bg-muted/40"
+                >
+                  Original source
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </a>
+              )}
+              <SaveStoryButton articleId={article.id} />
+            </div>
+          </div>
+
           {articleImage && (
             <Image
               src={resolveApiAssetUrl(articleImage)}
               alt={article.title}
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover rounded-md mb-4"
+              width={800}
+              height={450}
+              className="w-full h-auto object-cover rounded-lg mb-5"
             />
           )}
 
-          <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
+          <div className="mb-5 rounded-lg border border-border bg-muted/30 p-3.5">
+            <CoverageBar article={article} compact={true} />
+          </div>
+
+          {article.description &&
+            article.content &&
+            article.description.trim() !== article.content.trim() && (
+              <div className="mb-5 rounded-lg border-l-4 border-foreground bg-muted/40 p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Key Briefing Summary
+                </p>
+                <p className="text-sm leading-relaxed text-foreground">
+                  {article.description}
+                </p>
+              </div>
+            )}
+
+          <h2 className="text-lg font-bold mb-3">Full Report</h2>
+          <div className="space-y-4 text-base text-foreground leading-relaxed">
+            {paragraphs.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
 
           {Array.isArray(article.tags) && article.tags.length > 0 && (
-            <div className="mt-4">
-              <div className="flex flex-wrap gap-2">
+            <div className="mt-6 pt-4 border-t border-border">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Tags:
+                </span>
                 {article.tags.map((tag, index) => (
-                  <span
+                  <Badge
                     key={`${tag}-${index}`}
-                    className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm"
+                    variant="outline"
+                    className="text-xs font-normal"
                   >
-                    {tag}
-                  </span>
+                    #{tag}
+                  </Badge>
                 ))}
               </div>
             </div>
           )}
 
-          <SaveStoryButton articleId={article.id} />
-          <h3 className="text-2xl font-bold mt-6 mb-1">Article</h3>
-          <div className="flex flex-col space-y-1 mb-6">
-            <div className="h-0.5 w-full bg-gray-700"></div>
-            <div className="h-0.5 w-full bg-gray-400"></div>
-            <div className="h-0.5 w-full bg-gray-200"></div>
-          </div>
-
-          <p className="text-gray-700 leading-relaxed">{article.content}</p>
-
           {coverageUrl && (
-            <div className="mt-6">
+            <div className="mt-6 pt-4 border-t border-border">
               <StoryCoverage apiUrl={coverageUrl} />
             </div>
           )}
-        </main>
+        </article>
 
-        <div className="col-span-3">
+        <div className="md:col-span-3 min-w-0 order-3">
           <RightSidebar />
         </div>
       </div>
 
       {Array.isArray(relatedArticles) && relatedArticles.length > 0 && (
-        <section className="mt-8">
+        <section className="mt-10 pt-6 border-t border-border">
           <RelatedNews articles={relatedArticles} />
         </section>
       )}

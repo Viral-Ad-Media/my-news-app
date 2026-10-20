@@ -101,7 +101,7 @@ export default function NewsList({
       ) : (
         <>
           {!articles.length && <p>No stories available for these filters.</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {articles.map((article) => (
               <Card
                 key={article.id}

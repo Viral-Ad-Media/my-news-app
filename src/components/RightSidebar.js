@@ -1,8 +1,10 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import AskVTAI from "./AskVTAI";
 import TopTopics from "./TopTopics";
 import SimilarNewsTopics from "./SimilarNewsTopics";
+import NewsSummary from "./NewsSummary";
 import { listItems, buildApiUrl } from "../lib/api";
 
 export default function RightSidebar() {
@@ -40,8 +42,8 @@ export default function RightSidebar() {
   }, []);
 
   return (
-    <div>
-      {/* Ask VT AI Section */}
+    <div className="min-w-0">
+      {/* Ask Aboki AI Section */}
       <AskVTAI />
 
       {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
@@ -51,6 +53,9 @@ export default function RightSidebar() {
 
       {/* Similar News Topics Section */}
       <SimilarNewsTopics topics={categories} />
+
+      {/* Briefing Recap / News Summary Section */}
+      <NewsSummary />
     </div>
   );
 }

@@ -101,29 +101,31 @@ export default function TopicPreferences() {
           )}
         </p>
       )}
-      <form onSubmit={save} className="mt-5 space-y-3 max-w-2xl">
+      <form onSubmit={save} className="mt-5 space-y-4">
         {loading ? (
           <p>Loading topics…</p>
         ) : (
-          topics.map((topic) => (
-            <Label
-              className="flex gap-3 items-center p-4 rounded-lg bg-muted/60 cursor-pointer"
-              key={topic.id}
-            >
-              <Checkbox
-                disabled={!ready}
-                checked={selected.includes(topic.id)}
-                onCheckedChange={(checked) =>
-                  setSelected(
-                    checked === true
-                      ? [...selected, topic.id]
-                      : selected.filter((id) => id !== topic.id),
-                  )
-                }
-              />{" "}
-              {topic.name}
-            </Label>
-          ))
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {topics.map((topic) => (
+              <Label
+                className="flex gap-3 items-center p-4 rounded-lg bg-muted/60 cursor-pointer"
+                key={topic.id}
+              >
+                <Checkbox
+                  disabled={!ready}
+                  checked={selected.includes(topic.id)}
+                  onCheckedChange={(checked) =>
+                    setSelected(
+                      checked === true
+                        ? [...selected, topic.id]
+                        : selected.filter((id) => id !== topic.id),
+                    )
+                  }
+                />{" "}
+                {topic.name}
+              </Label>
+            ))}
+          </div>
         )}
         <div className="flex gap-4 my-3">
           <Button

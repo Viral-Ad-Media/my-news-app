@@ -1,23 +1,19 @@
-// components/LeftSidebar.js
-
 "use client";
-// import DailyIndex from './DailyIndex';
-import CoverageDetails from './CoverageDetails';
-import ExchangeRate from './ExchangeRate';
-import { buildApiUrl } from '../lib/api';
+
+import DailyIndex from "./DailyIndex";
+import CoverageDetails from "./CoverageDetails";
+import ExchangeRate from "./ExchangeRate";
+import { buildApiUrl } from "../lib/api";
 
 export default function LeftSidebar({ articleId }) {
-  const coverageUrl = articleId ? buildApiUrl(`/news/${articleId}/coverage/`) : '';
+  const coverageUrl = articleId
+    ? buildApiUrl(`/news/${articleId}/coverage/`)
+    : "";
 
   return (
-    <div>
-      {/* ExchangeRate Section */}
+    <div className="space-y-6">
       <ExchangeRate />
-
-      {/* Daily Index Section */}
-      {/* <DailyIndex indexValue={indexValue} sentiment={sentiment} /> */}
-
-      {/* Coverage Details Section */}
+      <DailyIndex apiUrl={coverageUrl} />
       {coverageUrl && <CoverageDetails apiUrl={coverageUrl} />}
     </div>
   );

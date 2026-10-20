@@ -106,7 +106,7 @@ export default function TopNews() {
               {lead.title}
             </h3>
           </Link>
-          <p className="mt-4 text-base leading-relaxed max-w-prose">
+          <p className="mt-4 text-base leading-relaxed max-w-4xl">
             {lead.description}
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -125,8 +125,8 @@ export default function TopNews() {
           </div>
         </article>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4 mt-4">
-        {others.slice(0, 2).map((item) => (
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+        {others.slice(0, 3).map((item) => (
           <article
             key={item.id}
             className="rounded-xl bg-muted/60 p-5 flex flex-col gap-3"

@@ -1,25 +1,11 @@
 "use client";
+
 import useSavedStories from "../lib/use-saved-stories";
 import SaveStoryButton from "./SaveStoryButton";
 import CoverageBar from "./CoverageBar";
 import Link from "next/link";
 import Image from "./NewsImage";
-import { resolveApiAssetUrl } from "../lib/api";
-
-// Utility function to calculate time ago
-function getTimeAgo(dateString) {
-  const postedDate = new Date(dateString);
-  const now = new Date();
-  const timeDiff = Math.abs(now - postedDate);
-  const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
-  const daysAgo = Math.floor(hoursAgo / 24);
-
-  if (daysAgo > 0) {
-    return `${daysAgo} day${daysAgo > 1 ? "s" : ""} ago`;
-  } else {
-    return `${hoursAgo} hour${hoursAgo > 1 ? "s" : ""} ago`;
-  }
-}
+import { formatNewsDate, resolveApiAssetUrl } from "../lib/api";
 
 export default function RelatedNews({ articles }) {
   const relatedArticles = Array.isArray(articles) ? articles : [];
@@ -27,60 +13,71 @@ export default function RelatedNews({ articles }) {
   const savedIds = useSavedStories(
     relatedArticles.map((article) => article.id),
   );
+
   return (
     <div>
-      {/* Header */}
-      <h2 className="text-2xl font-bold">Related News</h2>
-      <div className="flex flex-col space-y-1 mb-4">
-        <div className="h-0.5 w-full bg-gray-700"></div>
-        <div className="h-0.5 w-full bg-gray-400"></div>
-        <div className="h-0.5 w-full bg-gray-200"></div>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold tracking-tight">Related Stories</h2>
+        <p className="text-sm text-muted-foreground">
+          More coverage from shared beats and editorial categories
+        </p>
       </div>
 
-      {/* News Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {relatedArticles.map((news) => (
-          <div
+          <article
             key={news.id}
-            className="bg-white p-4 border rounded-lg "
+            className="rounded-xl border border-border bg-card p-4 flex flex-col justify-between gap-3"
           >
-            {/* Header with Categories and Bookmark */}
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-gray-600">
-                {news.categories && news.categories.length > 0
-                  ? news.categories.map((cat) => cat.name).join(", ")
-                  : "Uncategorized"}
-              </span>
-              <SaveStoryButton
-                articleId={news.id}
-                initiallySaved={savedIds.includes(news.id)}
-              />
+            <div className="space-y-2.5">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground truncate">
+                  {news.categories && news.categories.length > 0
+                    ? news.categories.map((cat) => cat.name).join(" · ")
+                    : "News"}
+                </span>
+                <SaveStoryButton
+                  articleId={news.id}
+                  initiallySaved={savedIds.includes(news.id)}
+                />
+              </div>
+
+              {(news.image_url || news.image) && (
+                <Link href={`/news/${news.id}`} className="block">
+                  <Image
+                    src={resolveApiAssetUrl(news.image_url || news.image)}
+                    alt={news.title}
+                    width={400}
+                    height={200}
+                    className="w-full h-36 object-cover rounded-md"
+                  />
+                </Link>
+              )}
+
+              <h3 className="text-base font-semibold leading-snug">
+                <Link
+                  href={`/news/${news.id}`}
+                  className="hover:underline underline-offset-4"
+                >
+                  {news.title}
+                </Link>
+              </h3>
             </div>
 
-            {/* Title */}
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              <Link href={`/news/${news.id}`}>{news.title}</Link>
-            </h3>
-
-            {/* Coverage Bar and Source Count */}
-            <CoverageBar sources={news.total_sources} />
-
-            {/* Image */}
-            {(news.image_url || news.image) && (
-              <Image
-                src={resolveApiAssetUrl(news.image_url || news.image)}
-                alt={news.title}
-                width={400}
-                height={200}
-                className="w-full h-40 object-cover mt-4 rounded-md"
+            <div className="space-y-2 pt-2 border-t border-border/60">
+              <CoverageBar
+                article={news}
+                sources={news.total_sources}
+                compact={true}
+                showLegend={false}
               />
-            )}
-
-            {/* Date and Location */}
-            <p className="text-xs text-gray-600 mt-2">
-              {getTimeAgo(news.published_at)}, {news.location}
-            </p>
-          </div>
+              <p className="text-xs text-muted-foreground">
+                {news.source?.name ? `${news.source.name} · ` : ""}
+                {formatNewsDate(news.published_at)}
+                {news.location ? ` · ${String(news.location).toUpperCase()}` : ""}
+              </p>
+            </div>
+          </article>
         ))}
       </div>
     </div>

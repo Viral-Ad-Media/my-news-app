@@ -88,7 +88,7 @@ export default function Header() {
   }
   return (
     <header className="border-b bg-background">
-      <div className="w-full max-w-[1100px] mx-auto px-4 py-4 sm:px-6">
+      <div className="w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 flex-wrap">
           <Link href="/" aria-label="AbokiNews home" className="mr-auto">
             <Image

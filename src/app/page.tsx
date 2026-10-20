@@ -15,9 +15,8 @@ export default function Home() {
           Nigeria and beyond. Read the story, follow the source.
         </p>
       </div>
-      {/* Inside the 1100px frame: 48px padding leaves 1052px; (1052 - 3*16)/4 = 251px, with a 785px story column + 16px gap + 251px rail. */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-        <div className="lg:col-span-3 min-w-0 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-8">
           <TopNews />
           <LopsidedStories mode="widget" />
           <PersonalizedNewsFeed />
@@ -25,7 +24,7 @@ export default function Home() {
         </div>
         <aside
           aria-label="Explore topics and ask questions"
-          className="min-w-0"
+          className="lg:col-span-4 xl:col-span-3 min-w-0"
         >
           <Sidebar />
         </aside>
