@@ -39,3 +39,10 @@ next-env.d.ts
 .taste-skill/
 /test-results/
 /playwright-report/
+
+# Environment files (keep .env.example templates)
+.env
+.env*
+*.env
+*.env.*
+!.env.example
