@@ -141,3 +141,22 @@ test("save story gives a pressed state and supports unsaving", async ({
   await expect(save).toHaveAttribute("aria-pressed", "false");
   expect(methods).toEqual(["PUT", "DELETE"]);
 });
+test("lopsided page renders AllSides Left, Center, and Right comparisons without overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/lopsided");
+  await expect(
+    page.getByRole("heading", {
+      name: "Lopsided Coverage & Headline Roundups",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("From the Left").first()).toBeVisible();
+  await expect(page.getByText("From the Center").first()).toBeVisible();
+  await expect(page.getByText("From the Right").first()).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+});

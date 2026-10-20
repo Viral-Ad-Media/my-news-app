@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import CoverageBar from "./CoverageBar";
 
 export default function CoverageDetails({ apiUrl }) {
   const [coverageData, setCoverageData] = useState({
     totalSources: 0,
+    leftCoverage: 33,
+    centerCoverage: 34,
+    rightCoverage: 33,
+    dominantBias: "balanced",
     positive: 0,
     neutral: 0,
     negative: 0,
@@ -30,11 +35,18 @@ export default function CoverageDetails({ apiUrl }) {
         }
         const data = await response.json();
         setCoverageData({
-          totalSources: data.total_sources,
-          positive: data.sentiment_stats.positive,
-          neutral: data.sentiment_stats.neutral,
-          negative: data.sentiment_stats.negative,
-          sentiment: data.sentiment,
+          totalSources: data.total_sources || 1,
+          leftCoverage:
+            typeof data.left_coverage === "number" ? data.left_coverage : 33,
+          centerCoverage:
+            typeof data.center_coverage === "number" ? data.center_coverage : 34,
+          rightCoverage:
+            typeof data.right_coverage === "number" ? data.right_coverage : 33,
+          dominantBias: data.dominant_bias || "balanced",
+          positive: data.sentiment_stats?.positive ?? 0,
+          neutral: data.sentiment_stats?.neutral ?? 0,
+          negative: data.sentiment_stats?.negative ?? 0,
+          sentiment: data.sentiment || "Neutral",
         });
         setError(null);
       } catch (err) {
@@ -52,41 +64,64 @@ export default function CoverageDetails({ apiUrl }) {
   }, [apiUrl]);
 
   if (loading) {
-    return <p>Loading coverage details...</p>;
+    return (
+      <p className="text-sm text-muted-foreground mt-4">
+        Loading coverage details…
+      </p>
+    );
   }
 
   if (error) {
-    return <p className="text-red-500">Error: {error}</p>;
+    return <p className="text-sm text-destructive mt-4">Error: {error}</p>;
   }
 
   return (
-    <div>
-      <h3 className="text-2xl font-bold mt-6 mb-1">Coverage Details</h3>
-      <div className="flex flex-col space-y-1 mb-6">
-        <div className="h-0.5 w-full bg-gray-700"></div>
-        <div className="h-0.5 w-full bg-gray-400"></div>
-        <div className="h-0.5 w-full bg-gray-200"></div>
+    <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4 space-y-4">
+      <div>
+        <h3 className="text-base font-bold">Coverage &amp; Bias Spectrum</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          AllSides-style L · C · R source breakdown
+        </p>
       </div>
-      <div className="flex flex-col space-y-2 text-gray-700">
+
+      <CoverageBar
+        sources={coverageData.totalSources}
+        left={coverageData.leftCoverage}
+        center={coverageData.centerCoverage}
+        right={coverageData.rightCoverage}
+        compact={true}
+      />
+
+      <div className="flex flex-col space-y-2 text-xs pt-2 border-t border-border">
         <div className="flex justify-between">
-          <span>Total News Sources</span>
-          <span className="font-bold">{coverageData.totalSources}</span>
+          <span className="text-muted-foreground">Total News Sources</span>
+          <span className="font-semibold tabular-nums">
+            {coverageData.totalSources}
+          </span>
         </div>
         <div className="flex justify-between">
-          <span>Positive</span>
-          <span className="font-bold">{coverageData.positive}</span>
+          <span className="text-muted-foreground">From the Left</span>
+          <span className="font-semibold tabular-nums">
+            {coverageData.leftCoverage}%
+          </span>
         </div>
         <div className="flex justify-between">
-          <span>Neutral</span>
-          <span className="font-bold">{coverageData.neutral}</span>
+          <span className="text-muted-foreground">From the Center</span>
+          <span className="font-semibold tabular-nums">
+            {coverageData.centerCoverage}%
+          </span>
         </div>
         <div className="flex justify-between">
-          <span>Negative</span>
-          <span className="font-bold">{coverageData.negative}</span>
+          <span className="text-muted-foreground">From the Right</span>
+          <span className="font-semibold tabular-nums">
+            {coverageData.rightCoverage}%
+          </span>
         </div>
-        <div className="flex justify-between mt-4">
-          <span>Sentiment</span>
-          <span className="font-bold text-red-500">{coverageData.sentiment}</span>
+        <div className="flex justify-between pt-2 border-t border-border/60">
+          <span className="text-muted-foreground">Tone / Sentiment</span>
+          <span className="font-semibold capitalize">
+            {coverageData.sentiment}
+          </span>
         </div>
       </div>
     </div>

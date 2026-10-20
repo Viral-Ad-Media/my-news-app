@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import TopNews from "../components/TopNews";
 import LatestNews from "../components/LatestNews";
 import PersonalizedNewsFeed from "../components/PersonalizedNewsFeed";
+import LopsidedStories from "../components/LopsidedStories";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
         <div className="lg:col-span-3 min-w-0 space-y-8">
           <TopNews />
+          <LopsidedStories mode="widget" />
           <PersonalizedNewsFeed />
           <LatestNews />
         </div>

@@ -5,6 +5,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "newsapp-server-u11s.onrender.com" },
+      { protocol: "https", hostname: "img.allsides.com" },
     ],
   },
 };

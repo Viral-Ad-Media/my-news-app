@@ -13,6 +13,7 @@ import {
 import useSavedStories from "../lib/use-saved-stories";
 import NewsImage from "./NewsImage";
 import SaveStoryButton from "./SaveStoryButton";
+import CoverageBar from "./CoverageBar";
 
 export default function NewsList({
   title = "News",
@@ -133,6 +134,15 @@ export default function NewsList({
                       {article.source?.name} ·{" "}
                       {formatNewsDate(article.published_at)}
                     </p>
+                    {typeof article.left_coverage === "number" && (
+                      <div className="mb-3">
+                        <CoverageBar
+                          article={article}
+                          compact={true}
+                          showLegend={false}
+                        />
+                      </div>
+                    )}
                     <SaveStoryButton
                       articleId={article.id}
                       initiallySaved={saved || savedIds.includes(article.id)}
