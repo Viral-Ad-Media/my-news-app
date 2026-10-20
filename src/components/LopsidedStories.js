@@ -21,7 +21,7 @@ import {
   buildApiUrl,
   formatNewsDate,
   listItems,
-  resolveApiAssetUrl,
+  getArticleImageUrl,
 } from "../lib/api";
 import {
   BIAS_META,
@@ -127,7 +127,7 @@ function PerspectiveColumn({ item, bucketKey, fallbackArticleId }) {
 function RoundupArticleCard({ article, featured = false }) {
   const [expanded, setExpanded] = useState(featured);
   const coverage = useMemo(() => normalizeArticleCoverage(article), [article]);
-  const image = article.image_url || article.image;
+  const image = getArticleImageUrl(article);
   const categoryName =
     article.categories?.map((c) => c.name).join(" · ") || "Headline Roundup";
   const isAllSides =
@@ -192,12 +192,12 @@ function RoundupArticleCard({ article, featured = false }) {
           {/* Headline & optional feature image (NYT / The Athletic narrative layout) */}
           <div
             className={
-              image && featured
+              image
                 ? "grid grid-cols-1 md:grid-cols-12 gap-5 items-start"
                 : "block"
             }
           >
-            <div className={image && featured ? "md:col-span-8 min-w-0" : "min-w-0"}>
+            <div className={image ? "md:col-span-8 min-w-0" : "min-w-0"}>
               <Link
                 href={`/news/${article.id}`}
                 className="group block focus-visible:outline-none"
@@ -245,10 +245,10 @@ function RoundupArticleCard({ article, featured = false }) {
               )}
             </div>
 
-            {image && featured && (
+            {image && (
               <div className="md:col-span-4">
                 <NewsImage
-                  src={resolveApiAssetUrl(image)}
+                  src={image}
                   alt={article.title}
                   width={480}
                   height={320}

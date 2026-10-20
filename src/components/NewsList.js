@@ -8,7 +8,7 @@ import {
   formatNewsDate,
   buildApiUrl,
   listItems,
-  resolveApiAssetUrl,
+  getArticleImageUrl,
 } from "../lib/api";
 import useSavedStories from "../lib/use-saved-stories";
 import NewsImage from "./NewsImage";
@@ -110,17 +110,13 @@ export default function NewsList({
                 <CardContent className="p-4 h-full">
                   <article className="flex h-full flex-col">
                     <Link href={`/news/${article.id}`}>
-                      {(article.image_url || article.image) && (
+                      {getArticleImageUrl(article) && (
                         <NewsImage
-                          src={
-                            resolveApiAssetUrl(
-                              article.image_url || article.image,
-                            ) || "/images/Placeholder.webp"
-                          }
+                          src={getArticleImageUrl(article)}
                           alt={article.title}
                           width={640}
                           height={360}
-                          className="w-full h-40 object-cover rounded"
+                          className="w-full h-44 object-cover rounded"
                         />
                       )}
                       <h3 className="font-semibold text-lg mt-3 leading-snug">

@@ -1,11 +1,30 @@
-import Image from "next/image";
+"use client";
 
-export default function NewsImage(props) {
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { resolveApiAssetUrl } from "../lib/api";
+
+const FALLBACK_IMAGE = "/images/Placeholder.webp";
+
+export default function NewsImage({ src, alt, ...props }) {
+  const resolved = resolveApiAssetUrl(src) || FALLBACK_IMAGE;
+  const [currentSrc, setCurrentSrc] = useState(resolved);
+
+  useEffect(() => {
+    setCurrentSrc(resolveApiAssetUrl(src) || FALLBACK_IMAGE);
+  }, [src]);
+
   return (
     <Image
       {...props}
-      unoptimized={/^https?:\/\//i.test(props.src || "")}
-      alt={props.alt || "News image"}
+      src={currentSrc}
+      unoptimized={/^https?:\/\//i.test(currentSrc)}
+      alt={alt ?? "News image"}
+      onError={() => {
+        if (currentSrc !== FALLBACK_IMAGE) {
+          setCurrentSrc(FALLBACK_IMAGE);
+        }
+      }}
     />
   );
 }

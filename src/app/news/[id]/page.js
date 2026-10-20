@@ -10,7 +10,7 @@ import RightSidebar from "../../../components/RightSidebar";
 import StoryCoverage from "../../../components/StoryCoverage";
 import RelatedNews from "../../../components/RelatedNews";
 import CoverageBar from "../../../components/CoverageBar";
-import { formatNewsDate, resolveApiAssetUrl } from "../../../lib/api";
+import { formatNewsDate, getArticleImageUrl } from "../../../lib/api";
 
 async function fetchArticleAndRelatedNews(articleId) {
   const articleUrl = buildServerApiUrl(`/news/${articleId}/`);
@@ -62,7 +62,7 @@ export default async function NewsDetails({ params }) {
   }
 
   const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
-  const articleImage = article.image_url || article.image;
+  const articleImage = getArticleImageUrl(article);
   const paragraphs = String(article.content || article.description || "")
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -126,7 +126,7 @@ export default async function NewsDetails({ params }) {
 
           {articleImage && (
             <Image
-              src={resolveApiAssetUrl(articleImage)}
+              src={articleImage}
               alt={article.title}
               width={800}
               height={450}

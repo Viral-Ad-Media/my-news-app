@@ -9,7 +9,7 @@ import {
   formatNewsDate,
   listItems,
   buildApiUrl,
-  resolveApiAssetUrl,
+  getArticleImageUrl,
 } from "../lib/api";
 
 export default function TopNews() {
@@ -80,7 +80,7 @@ export default function TopNews() {
       </section>
     );
   const [lead, ...others] = news;
-  const image = lead.image_url || lead.image;
+  const image = getArticleImageUrl(lead);
   return (
     <section aria-labelledby="briefing-title">
       <h2 id="briefing-title" className="text-lg font-semibold mb-4">
@@ -89,7 +89,7 @@ export default function TopNews() {
       <div className="rounded-xl bg-muted overflow-hidden">
         {image && (
           <NewsImage
-            src={resolveApiAssetUrl(image)}
+            src={image}
             alt=""
             width={1000}
             height={480}
@@ -126,27 +126,43 @@ export default function TopNews() {
         </article>
       </div>
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-        {others.slice(0, 3).map((item) => (
-          <article
-            key={item.id}
-            className="rounded-xl bg-muted/60 p-5 flex flex-col gap-3"
-          >
-            <p className="text-sm text-muted-foreground">
-              {item.source?.name} · {item.categories?.[0]?.name || "News"}
-            </p>
-            <Link
-              href={`/news/${item.id}`}
-              className="hover:underline underline-offset-4"
+        {others.slice(0, 3).map((item) => {
+          const itemImage = getArticleImageUrl(item);
+          return (
+            <article
+              key={item.id}
+              className="rounded-xl bg-muted/60 overflow-hidden flex flex-col"
             >
-              <h3 className="text-lg leading-snug font-semibold">
-                {item.title}
-              </h3>
-            </Link>
-            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
-              {item.description}
-            </p>
-          </article>
-        ))}
+              {itemImage && (
+                <Link href={`/news/${item.id}`} className="block">
+                  <NewsImage
+                    src={itemImage}
+                    alt=""
+                    width={480}
+                    height={260}
+                    className="w-full h-36 object-cover"
+                  />
+                </Link>
+              )}
+              <div className="p-5 flex flex-col gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {item.source?.name} · {item.categories?.[0]?.name || "News"}
+                </p>
+                <Link
+                  href={`/news/${item.id}`}
+                  className="hover:underline underline-offset-4"
+                >
+                  <h3 className="text-lg leading-snug font-semibold">
+                    {item.title}
+                  </h3>
+                </Link>
+                <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                  {item.description}
+                </p>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

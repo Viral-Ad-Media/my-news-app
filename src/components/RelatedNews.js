@@ -5,7 +5,7 @@ import SaveStoryButton from "./SaveStoryButton";
 import CoverageBar from "./CoverageBar";
 import Link from "next/link";
 import Image from "./NewsImage";
-import { formatNewsDate, resolveApiAssetUrl } from "../lib/api";
+import { formatNewsDate, getArticleImageUrl } from "../lib/api";
 
 export default function RelatedNews({ articles }) {
   const relatedArticles = Array.isArray(articles) ? articles : [];
@@ -42,10 +42,10 @@ export default function RelatedNews({ articles }) {
                 />
               </div>
 
-              {(news.image_url || news.image) && (
+              {getArticleImageUrl(news) && (
                 <Link href={`/news/${news.id}`} className="block">
                   <Image
-                    src={resolveApiAssetUrl(news.image_url || news.image)}
+                    src={getArticleImageUrl(news)}
                     alt={news.title}
                     width={400}
                     height={200}
