@@ -5,15 +5,12 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowUpRight,
-  Bookmark,
   CheckCircle2,
   Edit3,
   FolderKanban,
   Globe2,
-  Layers,
   LayoutDashboard,
   Lock,
-  LogOut,
   Newspaper,
   Plus,
   RefreshCw,
@@ -30,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNewsDate } from "../lib/api";
+import SeoEditor from "./SeoEditor";
+import { SEO_DEFAULTS, getSiteUrl } from "../lib/seo";
 
 const ADMIN_TABS = [
   { key: "overview", label: "Overview & Pipelines", icon: LayoutDashboard },
@@ -39,14 +38,15 @@ const ADMIN_TABS = [
 ];
 
 const INITIAL_ARTICLE_FORM = {
+  ...SEO_DEFAULTS,
   id: null,
   title: "",
   description: "",
   content: "",
   categories: "Business, Markets",
   location: "ng",
-  source_name: "Nairametrics",
-  source_url: "https://nairametrics.com",
+  source_name: "AbokiNews Editorial",
+  source_url: getSiteUrl(),
   article_url: "",
   remote_image_url: "",
   dominant_bias: "balanced",
@@ -62,6 +62,11 @@ export default function SuperadminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [statusBanner, setStatusBanner] = useState("");
   const [errorBanner, setErrorBanner] = useState("");
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "articles")
+      setActiveTab("articles");
+  }, []);
 
   // Article form & filter state
   const [articleForm, setArticleForm] = useState(INITIAL_ARTICLE_FORM);
@@ -154,6 +159,9 @@ export default function SuperadminDashboard() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...Object.fromEntries(
+            Object.keys(SEO_DEFAULTS).map((key) => [key, articleForm[key]]),
+          ),
           title: articleForm.title,
           description: articleForm.description,
           content: articleForm.content || articleForm.description,
@@ -192,6 +200,12 @@ export default function SuperadminDashboard() {
 
   function startEditArticle(article) {
     setArticleForm({
+      ...Object.fromEntries(
+        Object.entries(SEO_DEFAULTS).map(([key, fallback]) => [
+          key,
+          article[key] ?? fallback,
+        ]),
+      ),
       id: article.id,
       title: article.title || "",
       description: article.description || "",
@@ -199,8 +213,8 @@ export default function SuperadminDashboard() {
       categories:
         article.categories?.map((c) => c.name).join(", ") || "Business",
       location: article.location || "ng",
-      source_name: article.source?.name || "Nairametrics",
-      source_url: article.source?.url || "https://nairametrics.com",
+      source_name: article.source?.name || "AbokiNews Editorial",
+      source_url: article.source?.url || getSiteUrl(),
       article_url: article.article_url || "",
       remote_image_url: article.image_url || "",
       dominant_bias: article.dominant_bias || "balanced",
@@ -208,7 +222,7 @@ export default function SuperadminDashboard() {
       center_coverage: article.center_coverage ?? 34,
     });
     setActiveTab("articles");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   async function handleDeleteArticle(articleId, title) {
@@ -276,16 +290,13 @@ export default function SuperadminDashboard() {
     setStatusBanner("");
     setErrorBanner("");
     try {
-      const res = await fetch(
-        `/api/reader/superadmin/users/${targetUser.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            [field]: !targetUser[field],
-          }),
-        },
-      );
+      const res = await fetch(`/api/reader/superadmin/users/${targetUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          [field]: !targetUser[field],
+        }),
+      });
       if (!res.ok) {
         throw new Error("Unable to update user privileges.");
       }
@@ -310,9 +321,7 @@ export default function SuperadminDashboard() {
       if (!res.ok) {
         throw new Error(data?.detail || "Pipeline action failed.");
       }
-      setStatusBanner(
-        data?.output || `Completed pipeline action: ${action}`,
-      );
+      setStatusBanner(data?.output || `Completed pipeline action: ${action}`);
       if (extraPayload?.url) {
         setRssImportUrl("");
       }
@@ -355,7 +364,7 @@ export default function SuperadminDashboard() {
       <section className="max-w-xl mx-auto py-8">
         <Card className="border border-border shadow-none">
           <CardHeader>
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               Superadmin Access Required
             </div>
@@ -398,142 +407,63 @@ export default function SuperadminDashboard() {
   );
 
   return (
-    <div className="space-y-8 min-w-0">
-      {/* Superadmin Header */}
-      <header className="rounded-xl border border-border bg-muted/40 p-4 sm:p-6 lg:p-7">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-            <div
-              aria-hidden="true"
-              className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0"
-            >
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="uppercase tracking-wider text-[10px]">
-                  Superadmin Command Center
-                </Badge>
-                <span className="text-xs text-muted-foreground truncate">
-                  {user.email || user.username}
-                </span>
-              </div>
-              <h1 className="fluid-article-title font-bold tracking-tight mt-1">
-                Editorial &amp; Platform Administration
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Publish source-linked blog posts, manage categories and news
-                sources, and control reader roles across AbokiNews.
-              </p>
-            </div>
+    <div className="space-y-6 min-w-0 max-w-[1280px] mx-auto">
+      <header className="space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {activeTab === "articles" ? "Post editor" : "Editorial desk"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              AbokiNews · {user.email || user.username}
+            </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard">Reader View</Link>
+              <Link href="/dashboard">Reader view</Link>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadOverview()}
-            >
-              <RefreshCw className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+            <Button variant="ghost" size="sm" onClick={() => loadOverview()}>
+              <RefreshCw aria-hidden="true" />
               Refresh
             </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-              Sign Out
+              Sign out
             </Button>
           </div>
         </div>
-
-        {/* 6 KPI Metric Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-6">
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>Published Posts</span>
-              <Newspaper className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_articles ?? 0}
-            </p>
+        <nav aria-label="Editorial workspace" className="flex flex-wrap gap-2">
+          {ADMIN_TABS.map((tab) => (
+            <Button
+              key={tab.key}
+              type="button"
+              size="sm"
+              variant={activeTab === tab.key ? "secondary" : "ghost"}
+              aria-pressed={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </nav>
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 rounded-lg bg-muted/40 p-4">
+            {[
+              ["Published posts", stats.total_articles],
+              ["Categories", stats.total_categories],
+              ["Sources", stats.total_sources],
+              ["Readers", stats.total_users],
+              ["Admins", stats.total_superadmins],
+              ["Saved stories", stats.total_bookmarks],
+            ].map(([label, count]) => (
+              <div key={label}>
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="mt-1 text-2xl font-normal tabular-nums">
+                  {count ?? 0}
+                </p>
+              </div>
+            ))}
           </div>
-
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>Topic Categories</span>
-              <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_categories ?? 0}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>News Sources</span>
-              <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_sources ?? 0}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>Total Users</span>
-              <Users className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_users ?? 0}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>Superadmins</span>
-              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_superadmins ?? 0}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-background p-3.5">
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>Saved Bookmarks</span>
-              <Bookmark className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-            <p className="mt-1.5 text-2xl font-bold tabular-nums">
-              {stats.total_bookmarks ?? 0}
-            </p>
-          </div>
-        </div>
-
-        {/* Workspace Tab Navigation */}
-        <div
-          role="group"
-          aria-label="Superadmin workspace tabs"
-          className="pill-balance gap-2 mt-6 pt-4 border-t border-border"
-        >
-          {ADMIN_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.key;
-            return (
-              <Button
-                key={tab.key}
-                type="button"
-                size="sm"
-                variant={active ? "default" : "outline"}
-                aria-pressed={active}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                <Icon className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                {tab.label}
-              </Button>
-            );
-          })}
-        </div>
+        )}
       </header>
 
       {/* Status & Error Notifications */}
@@ -575,27 +505,43 @@ export default function SuperadminDashboard() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
                     Articles by Regional Desk
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { code: "NG", label: "Nigeria Desk", count: locCounts.ng || 0 },
-                      { code: "US", label: "United States", count: locCounts.us || 0 },
-                      { code: "GB", label: "UK & Europe", count: locCounts.gb || 0 },
-                      { code: "WORLD", label: "Global Wire", count: locCounts.world || 0 },
+                      {
+                        code: "NG",
+                        label: "Nigeria Desk",
+                        count: locCounts.ng || 0,
+                      },
+                      {
+                        code: "US",
+                        label: "United States",
+                        count: locCounts.us || 0,
+                      },
+                      {
+                        code: "GB",
+                        label: "UK & Europe",
+                        count: locCounts.gb || 0,
+                      },
+                      {
+                        code: "WORLD",
+                        label: "Global Wire",
+                        count: locCounts.world || 0,
+                      },
                     ].map((desk) => (
                       <div
                         key={desk.code}
                         className="rounded-lg border border-border bg-muted/30 p-3"
                       >
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-sm">
                           {desk.code}
                         </Badge>
                         <p className="text-xl font-bold tabular-nums mt-1.5">
                           {desk.count}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {desk.label}
                         </p>
                       </div>
@@ -604,22 +550,42 @@ export default function SuperadminDashboard() {
                 </div>
 
                 <div className="pt-4 border-t border-border">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
                     Articles by Dominant Media Bias Framing
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     {[
-                      { key: "left", label: "Left-Leaning", count: biasCounts.left || 0 },
-                      { key: "center", label: "Center", count: biasCounts.center || 0 },
-                      { key: "right", label: "Right-Leaning", count: biasCounts.right || 0 },
-                      { key: "balanced", label: "Balanced", count: biasCounts.balanced || 0 },
-                      { key: "polarized", label: "Polarized", count: biasCounts.polarized || 0 },
+                      {
+                        key: "left",
+                        label: "Left-Leaning",
+                        count: biasCounts.left || 0,
+                      },
+                      {
+                        key: "center",
+                        label: "Center",
+                        count: biasCounts.center || 0,
+                      },
+                      {
+                        key: "right",
+                        label: "Right-Leaning",
+                        count: biasCounts.right || 0,
+                      },
+                      {
+                        key: "balanced",
+                        label: "Balanced",
+                        count: biasCounts.balanced || 0,
+                      },
+                      {
+                        key: "polarized",
+                        label: "Polarized",
+                        count: biasCounts.polarized || 0,
+                      },
                     ].map((b) => (
                       <div
                         key={b.key}
                         className="rounded-lg border border-border bg-muted/30 p-3"
                       >
-                        <p className="text-xs font-semibold text-muted-foreground">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           {b.label}
                         </p>
                         <p className="text-xl font-bold tabular-nums mt-1">
@@ -640,7 +606,7 @@ export default function SuperadminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-border">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+                  <span className="text-sm font-medium text-muted-foreground mr-1">
                     API Keys:
                   </span>
                   <Badge
@@ -809,8 +775,9 @@ export default function SuperadminDashboard() {
                       >
                         {art.title}
                       </Link>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {art.source?.name} · {String(art.location || "ng").toUpperCase()} ·{" "}
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {art.source?.name} ·{" "}
+                        {String(art.location || "ng").toUpperCase()} ·{" "}
                         {formatNewsDate(art.published_at)}
                       </p>
                     </div>
@@ -818,7 +785,7 @@ export default function SuperadminDashboard() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-7 px-2 text-xs shrink-0"
+                      className="h-7 px-2 text-sm shrink-0"
                       onClick={() => startEditArticle(art)}
                     >
                       Edit
@@ -835,7 +802,7 @@ export default function SuperadminDashboard() {
       {activeTab === "articles" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Publish / Edit Form */}
-          <div className="lg:col-span-5 min-w-0">
+          <div className="lg:col-span-12 min-w-0">
             <Card className="border border-border shadow-none">
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
@@ -857,224 +824,231 @@ export default function SuperadminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSaveArticle} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="admin-post-title">Headline Title</Label>
-                    <Input
-                      id="admin-post-title"
-                      required
-                      value={articleForm.title}
-                      onChange={(e) =>
-                        setArticleForm((prev) => ({
-                          ...prev,
-                          title: e.target.value,
-                        }))
-                      }
-                      placeholder="Enter blog post headline"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="admin-post-desc">
-                      Key Summary Description
-                    </Label>
-                    <textarea
-                      id="admin-post-desc"
-                      required
-                      rows={3}
-                      value={articleForm.description}
-                      onChange={(e) =>
-                        setArticleForm((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                      placeholder="Concise 1–2 sentence executive summary"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="admin-post-content">
-                      Full Multi-Paragraph Report (separate paragraphs with blank line)
-                    </Label>
-                    <textarea
-                      id="admin-post-content"
-                      rows={5}
-                      value={articleForm.content}
-                      onChange={(e) =>
-                        setArticleForm((prev) => ({
-                          ...prev,
-                          content: e.target.value,
-                        }))
-                      }
-                      placeholder="Full article body paragraphs…"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <form
+                  onSubmit={handleSaveArticle}
+                  className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start"
+                >
+                  <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="admin-post-categories">
-                        Categories (comma-separated)
+                      <Label htmlFor="admin-post-title">Headline Title</Label>
+                      <Input
+                        id="admin-post-title"
+                        required
+                        value={articleForm.title}
+                        onChange={(e) =>
+                          setArticleForm((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="Enter blog post headline"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="admin-post-desc">
+                        Key Summary Description
                       </Label>
-                      <Input
-                        id="admin-post-categories"
-                        value={articleForm.categories}
+                      <textarea
+                        id="admin-post-desc"
+                        required
+                        rows={3}
+                        value={articleForm.description}
                         onChange={(e) =>
                           setArticleForm((prev) => ({
                             ...prev,
-                            categories: e.target.value,
+                            description: e.target.value,
                           }))
                         }
-                        placeholder="Business, Technology"
+                        placeholder="Concise 1–2 sentence executive summary"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="admin-post-location">Regional Desk</Label>
-                      <select
-                        id="admin-post-location"
-                        value={articleForm.location}
+                      <Label htmlFor="admin-post-content">Article body</Label>
+                      <textarea
+                        id="admin-post-content"
+                        rows={12}
+                        value={articleForm.content}
                         onChange={(e) =>
                           setArticleForm((prev) => ({
                             ...prev,
-                            location: e.target.value,
+                            content: e.target.value,
                           }))
                         }
-                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="ng">Nigeria (ng)</option>
-                        <option value="us">United States (us)</option>
-                        <option value="gb">UK &amp; Europe (gb)</option>
-                        <option value="world">Global Wire (world)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="admin-post-source">Source Name</Label>
-                      <Input
-                        id="admin-post-source"
-                        value={articleForm.source_name}
-                        onChange={(e) =>
-                          setArticleForm((prev) => ({
-                            ...prev,
-                            source_name: e.target.value,
-                          }))
-                        }
-                        placeholder="Nairametrics"
+                        placeholder="Separate paragraphs with a blank line. Use ## for subheadings and [label](/news/123) for related links."
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="admin-post-bias">Dominant Framing</Label>
-                      <select
-                        id="admin-post-bias"
-                        value={articleForm.dominant_bias}
-                        onChange={(e) =>
-                          setArticleForm((prev) => ({
-                            ...prev,
-                            dominant_bias: e.target.value,
-                          }))
-                        }
-                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="balanced">Balanced</option>
-                        <option value="center">Center</option>
-                        <option value="left">Left-Leaning</option>
-                        <option value="right">Right-Leaning</option>
-                        <option value="polarized">Polarized</option>
-                      </select>
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-post-categories">
+                          Categories (comma-separated)
+                        </Label>
+                        <Input
+                          id="admin-post-categories"
+                          value={articleForm.categories}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              categories: e.target.value,
+                            }))
+                          }
+                          placeholder="Business, Technology"
+                        />
+                      </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="admin-cov-left" className="text-xs">
-                        Left %
-                      </Label>
-                      <Input
-                        id="admin-cov-left"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={articleForm.left_coverage}
-                        onChange={(e) =>
-                          setArticleForm((prev) => ({
-                            ...prev,
-                            left_coverage: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="admin-cov-center" className="text-xs">
-                        Center %
-                      </Label>
-                      <Input
-                        id="admin-cov-center"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={articleForm.center_coverage}
-                        onChange={(e) =>
-                          setArticleForm((prev) => ({
-                            ...prev,
-                            center_coverage: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Right %</Label>
-                      <div className="h-9 rounded-md border border-border bg-muted/40 px-3 flex items-center text-sm font-mono tabular-nums">
-                        {rightCoverageCalc}%
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-post-location">
+                          Regional Desk
+                        </Label>
+                        <select
+                          id="admin-post-location"
+                          value={articleForm.location}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              location: e.target.value,
+                            }))
+                          }
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="ng">Nigeria (ng)</option>
+                          <option value="us">United States (us)</option>
+                          <option value="gb">UK &amp; Europe (gb)</option>
+                          <option value="world">Global Wire (world)</option>
+                        </select>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="admin-post-image">
-                      Cloudinary or Remote Image URL (optional)
-                    </Label>
-                    <Input
-                      id="admin-post-image"
-                      type="url"
-                      value={articleForm.remote_image_url}
-                      onChange={(e) =>
-                        setArticleForm((prev) => ({
-                          ...prev,
-                          remote_image_url: e.target.value,
-                        }))
-                      }
-                      placeholder="https://res.cloudinary.com/..."
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-post-source">Source Name</Label>
+                        <Input
+                          id="admin-post-source"
+                          value={articleForm.source_name}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              source_name: e.target.value,
+                            }))
+                          }
+                          placeholder="Nairametrics"
+                        />
+                      </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="admin-post-url">
-                      Primary Source Article URL (optional)
-                    </Label>
-                    <Input
-                      id="admin-post-url"
-                      type="url"
-                      value={articleForm.article_url}
-                      onChange={(e) =>
-                        setArticleForm((prev) => ({
-                          ...prev,
-                          article_url: e.target.value,
-                        }))
-                      }
-                      placeholder="https://..."
-                    />
-                  </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-post-bias">
+                          Dominant Framing
+                        </Label>
+                        <select
+                          id="admin-post-bias"
+                          value={articleForm.dominant_bias}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              dominant_bias: e.target.value,
+                            }))
+                          }
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="balanced">Balanced</option>
+                          <option value="center">Center</option>
+                          <option value="left">Left-Leaning</option>
+                          <option value="right">Right-Leaning</option>
+                          <option value="polarized">Polarized</option>
+                        </select>
+                      </div>
+                    </div>
 
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="admin-cov-left" className="text-sm">
+                          Left %
+                        </Label>
+                        <Input
+                          id="admin-cov-left"
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={articleForm.left_coverage}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              left_coverage: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="admin-cov-center" className="text-sm">
+                          Center %
+                        </Label>
+                        <Input
+                          id="admin-cov-center"
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={articleForm.center_coverage}
+                          onChange={(e) =>
+                            setArticleForm((prev) => ({
+                              ...prev,
+                              center_coverage: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm">Right %</Label>
+                        <div className="h-9 rounded-md border border-border bg-muted/40 px-3 flex items-center text-sm font-normal tabular-nums">
+                          {rightCoverageCalc}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="admin-post-image">
+                        Cloudinary or Remote Image URL (optional)
+                      </Label>
+                      <Input
+                        id="admin-post-image"
+                        type="url"
+                        value={articleForm.remote_image_url}
+                        onChange={(e) =>
+                          setArticleForm((prev) => ({
+                            ...prev,
+                            remote_image_url: e.target.value,
+                          }))
+                        }
+                        placeholder="https://res.cloudinary.com/..."
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="admin-post-url">
+                        Primary Source Article URL (optional)
+                      </Label>
+                      <Input
+                        id="admin-post-url"
+                        type="url"
+                        value={articleForm.article_url}
+                        onChange={(e) =>
+                          setArticleForm((prev) => ({
+                            ...prev,
+                            article_url: e.target.value,
+                          }))
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                  <SeoEditor value={articleForm} onChange={setArticleForm} />
                   <Button
                     type="submit"
                     disabled={submittingArticle}
-                    className="w-full"
+                    className="w-full xl:col-span-2"
                   >
                     <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
                     {submittingArticle
@@ -1089,7 +1063,7 @@ export default function SuperadminDashboard() {
           </div>
 
           {/* Responsive Articles Data Table */}
-          <div className="lg:col-span-7 min-w-0">
+          <div className="lg:col-span-12 min-w-0">
             <Card className="border border-border shadow-none">
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1110,7 +1084,7 @@ export default function SuperadminDashboard() {
                       onChange={(e) => setArticleSearch(e.target.value)}
                       placeholder="Filter posts by title or desk…"
                       aria-label="Filter posts by title or desk"
-                      className="h-8 pl-8 text-xs"
+                      className="h-8 pl-8 text-sm"
                     />
                   </div>
                 </div>
@@ -1123,7 +1097,7 @@ export default function SuperadminDashboard() {
                   className="table-wrapper rounded-lg border border-border"
                 >
                   <table
-                    className="responsive-data-table text-left text-xs"
+                    className="responsive-data-table text-left text-sm"
                     style={{
                       "--label-2": '"Desk"',
                       "--label-3": '"Source"',
@@ -1145,7 +1119,10 @@ export default function SuperadminDashboard() {
                         <th scope="col" className="p-3 font-semibold">
                           Bias
                         </th>
-                        <th scope="col" className="p-3 text-right font-semibold">
+                        <th
+                          scope="col"
+                          className="p-3 text-right font-semibold"
+                        >
                           Actions
                         </th>
                       </tr>
@@ -1164,14 +1141,14 @@ export default function SuperadminDashboard() {
                               {art.title}
                             </Link>
                           </th>
-                          <td className="p-3 uppercase font-mono">
+                          <td className="p-3 uppercase font-normal">
                             {art.location || "ng"}
                           </td>
                           <td className="p-3 text-muted-foreground">
                             {art.source?.name || "Editorial"}
                           </td>
                           <td className="p-3">
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-sm">
                               {art.dominant_bias || "balanced"}
                             </Badge>
                           </td>
@@ -1181,22 +1158,28 @@ export default function SuperadminDashboard() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-7 px-2 text-xs"
+                                className="h-7 px-2 text-sm"
                                 onClick={() => startEditArticle(art)}
                               >
-                                <Edit3 className="h-3 w-3 mr-1" aria-hidden="true" />
+                                <Edit3
+                                  className="h-3 w-3 mr-1"
+                                  aria-hidden="true"
+                                />
                                 Edit
                               </Button>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                                className="h-7 px-2 text-sm text-destructive hover:text-destructive"
                                 onClick={() =>
                                   handleDeleteArticle(art.id, art.title)
                                 }
                               >
-                                <Trash2 className="h-3 w-3" aria-hidden="true" />
+                                <Trash2
+                                  className="h-3 w-3"
+                                  aria-hidden="true"
+                                />
                                 <span className="sr-only">
                                   Delete {art.title}
                                 </span>
@@ -1225,10 +1208,7 @@ export default function SuperadminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <form
-                  onSubmit={handleCreateCategory}
-                  className="flex gap-2"
-                >
+                <form onSubmit={handleCreateCategory} className="flex gap-2">
                   <Label htmlFor="new-category-name" className="sr-only">
                     New category name
                   </Label>
@@ -1258,7 +1238,10 @@ export default function SuperadminDashboard() {
                         >
                           {cat.name}
                         </Link>
-                        <Badge variant="secondary" className="text-xs tabular-nums">
+                        <Badge
+                          variant="secondary"
+                          className="text-sm tabular-nums"
+                        >
                           {cat.article_count ?? 0} posts
                         </Badge>
                       </div>
@@ -1266,7 +1249,7 @@ export default function SuperadminDashboard() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-xs text-destructive"
+                        className="h-7 px-2 text-sm text-destructive"
                         onClick={() => handleDeleteCategory(cat.id, cat.name)}
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1297,7 +1280,7 @@ export default function SuperadminDashboard() {
                   className="table-wrapper rounded-lg border border-border"
                 >
                   <table
-                    className="responsive-data-table text-left text-xs"
+                    className="responsive-data-table text-left text-sm"
                     style={{
                       "--label-2": '"Default Bias"',
                       "--label-3": '"Articles"',
@@ -1368,7 +1351,8 @@ export default function SuperadminDashboard() {
               id="superadmin-users-caption"
               className="text-lg font-bold"
             >
-              Registered Users &amp; Superadmin Roles ({overview?.users?.length || 0})
+              Registered Users &amp; Superadmin Roles (
+              {overview?.users?.length || 0})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1379,7 +1363,7 @@ export default function SuperadminDashboard() {
               className="table-wrapper rounded-lg border border-border"
             >
               <table
-                className="responsive-data-table text-left text-xs"
+                className="responsive-data-table text-left text-sm"
                 style={{
                   "--label-2": '"Email"',
                   "--label-3": '"Role"',
@@ -1420,13 +1404,13 @@ export default function SuperadminDashboard() {
                       </td>
                       <td className="p-3">
                         {u.is_superuser ? (
-                          <Badge className="text-[10px]">Superadmin</Badge>
+                          <Badge className="text-sm">Superadmin</Badge>
                         ) : u.is_staff ? (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-sm">
                             Staff
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-sm">
                             Reader
                           </Badge>
                         )}
@@ -1440,7 +1424,7 @@ export default function SuperadminDashboard() {
                             type="button"
                             size="sm"
                             variant={u.is_superuser ? "secondary" : "outline"}
-                            className="h-7 px-2 text-xs"
+                            className="h-7 px-2 text-sm"
                             onClick={() =>
                               handleToggleUserRole(u, "is_superuser")
                             }
@@ -1453,7 +1437,7 @@ export default function SuperadminDashboard() {
                             type="button"
                             size="sm"
                             variant={u.is_staff ? "secondary" : "outline"}
-                            className="h-7 px-2 text-xs"
+                            className="h-7 px-2 text-sm"
                             onClick={() => handleToggleUserRole(u, "is_staff")}
                           >
                             {u.is_staff ? "Revoke Staff" : "Grant Staff"}

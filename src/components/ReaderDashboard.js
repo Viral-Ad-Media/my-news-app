@@ -334,7 +334,7 @@ export default function ReaderDashboard() {
         <div
           role="group"
           aria-label="Dashboard sections"
-          className="pill-balance gap-2 mt-6 pt-4 border-t border-border"
+          className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-border"
         >
           {DASHBOARD_VIEWS.map((view) => {
             const Icon = view.icon;

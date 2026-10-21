@@ -172,3 +172,22 @@ npm run test:ui
 ```
 
 The browser suite mocks API responses and does not modify production data. CI also runs these checks.
+
+## Editorial SEO and account dialogs
+
+The post editor includes a focus phrase, search preview, title and description
+length guidance, and an actionable editorial score from the backend. Social
+metadata, canonical URL, image alternatives, Article-family schema and robots
+settings save with the post. Public article pages render the saved search/social
+metadata and safely render Markdown headings and links.
+
+Deploy the backend SEO migration before this frontend update. Set
+`NEXT_PUBLIC_SITE_URL` to this frontend's public canonical origin and rebuild.
+[SEO editor guide](docs/seo-editor.md) documents fields, score weights and limits.
+The score is our review checklist, not a ranking guarantee or a third-party score.
+
+Header Login/Sign Up controls open an accessible Radix dialog, with Escape, focus
+trapping/return, password visibility and shared validation. `/login` and `/signup`
+remain full-page routes. Dialog travel is disabled for keyboard activation and
+reduced-motion preferences. Browser tests cover the dialogs, responsive auth
+forms, draft analysis/save and rendered article metadata.

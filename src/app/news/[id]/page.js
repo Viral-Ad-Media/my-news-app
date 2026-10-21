@@ -1,3 +1,6 @@
+import { cache } from "react";
+import { articleMetadata, articleStructuredData } from "@/lib/seo";
+import ArticleBody from "@/components/ArticleBody";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +16,7 @@ import CoverageBar from "../../../components/CoverageBar";
 import ArticleTranslator from "../../../components/ArticleTranslator";
 import { formatNewsDate, getArticleImageUrl } from "../../../lib/api";
 
-async function fetchArticleAndRelatedNews(articleId) {
+const fetchArticleAndRelatedNews = cache(async function (articleId) {
   const articleUrl = buildServerApiUrl(`/news/${articleId}/`);
   const relatedUrl = buildServerApiUrl(`/news/${articleId}/related/`);
 
@@ -46,6 +49,14 @@ async function fetchArticleAndRelatedNews(articleId) {
     console.error("Error fetching data:", error.message);
     return { article: null, relatedArticles: [] };
   }
+});
+
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const { article } = await fetchArticleAndRelatedNews(id);
+  return article
+    ? articleMetadata(article)
+    : { title: "Story unavailable", robots: { index: false, follow: false } };
 }
 
 export default async function NewsDetails({ params }) {
@@ -62,6 +73,12 @@ export default async function NewsDetails({ params }) {
     );
   }
 
+  const hasComparison =
+    Array.isArray(article.perspectives) &&
+    article.perspectives.length > 1 &&
+    article.total_sources > 1;
+  const isExplainer =
+    Array.isArray(article.tags) && article.tags.includes("explainer");
   const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
   const articleImage = getArticleImageUrl(article);
   const paragraphs = String(article.content || article.description || "")
@@ -71,13 +88,30 @@ export default async function NewsDetails({ params }) {
 
   return (
     <div className="w-full min-w-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(210px,245px)_minmax(0,1fr)_minmax(220px,260px)] xl:grid-cols-[255px_minmax(0,1fr)_270px] gap-5 sm:gap-6 items-start">
-        <div className="md:col-span-1 lg:col-span-1 min-w-0 order-2 lg:order-1">
-          <LeftSidebar articleId={articleId} />
-        </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(articleStructuredData(article)).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
+      <div
+        className={
+          hasComparison
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(210px,245px)_minmax(0,1fr)_minmax(220px,260px)] gap-6 items-start"
+            : "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-start max-w-[1200px] mx-auto"
+        }
+      >
+        {hasComparison && (
+          <div className="md:col-span-1 lg:col-span-1 min-w-0 order-2 lg:order-1">
+            <LeftSidebar articleId={articleId} />
+          </div>
+        )}
 
         <article className="md:col-span-2 lg:col-span-1 min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6 lg:p-8 order-1 lg:order-2 break-words">
-          <div className="pill-balance items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             {Array.isArray(article.categories) &&
               article.categories.map((cat) => (
                 <Link key={cat.id} href={`/categories/${cat.id}`}>
@@ -87,7 +121,7 @@ export default async function NewsDetails({ params }) {
                 </Link>
               ))}
             {article.location && (
-              <Badge variant="outline" className="uppercase text-[10px]">
+              <Badge variant="outline" className="uppercase text-xs">
                 {article.location}
               </Badge>
             )}
@@ -117,7 +151,7 @@ export default async function NewsDetails({ params }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-semibold text-foreground hover:underline underline-offset-4 px-2.5 py-1.5 rounded-md border border-border bg-muted/40"
                 >
-                  Original source
+                  {isExplainer ? "Reference" : "Original source"}
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               )}
@@ -129,7 +163,7 @@ export default async function NewsDetails({ params }) {
             <div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip mb-6 bg-muted/30">
               <Image
                 src={articleImage}
-                alt={article.title}
+                alt={article.image_alt || article.title}
                 width={1000}
                 height={400}
                 className="block w-full h-full object-cover object-center"
@@ -137,9 +171,11 @@ export default async function NewsDetails({ params }) {
             </div>
           )}
 
-          <div className="mb-5 rounded-lg border border-border bg-muted/30 p-3.5">
-            <CoverageBar article={article} compact={true} />
-          </div>
+          {hasComparison && (
+            <div className="mb-5 rounded-lg border border-border bg-muted/30 p-3.5">
+              <CoverageBar article={article} compact={true} />
+            </div>
+          )}
 
           <div className="mb-5">
             <ArticleTranslator
@@ -153,7 +189,7 @@ export default async function NewsDetails({ params }) {
             article.content &&
             article.description.trim() !== article.content.trim() && (
               <div className="mb-5 rounded-lg border-l-4 border-foreground bg-muted/40 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                <p className="text-sm font-medium text-muted-foreground mb-1">
                   Key Briefing Summary
                 </p>
                 <p className="text-sm leading-relaxed text-foreground">
@@ -163,10 +199,8 @@ export default async function NewsDetails({ params }) {
             )}
 
           <h2 className="text-lg font-bold mb-3">Full Report</h2>
-          <div className="space-y-4 text-base text-foreground leading-relaxed">
-            {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+          <div className="max-w-[72ch]">
+            <ArticleBody content={article.content || article.description} />
           </div>
 
           {Array.isArray(article.tags) && article.tags.length > 0 && (
@@ -188,7 +222,7 @@ export default async function NewsDetails({ params }) {
             </div>
           )}
 
-          {coverageUrl && (
+          {coverageUrl && hasComparison && (
             <div className="mt-6 pt-4 border-t border-border">
               <StoryCoverage apiUrl={coverageUrl} />
             </div>

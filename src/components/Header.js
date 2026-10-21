@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ThemeToggle from "./ThemeToggle";
+import AuthDialog from "./AuthDialog";
 import { SUPPORTED_LANGUAGES, useLanguage } from "../lib/i18n";
 import {
   Sheet,
@@ -98,9 +99,13 @@ export default function Header() {
 
   return (
     <header className="border-b bg-background">
-      <div className="w-full max-w-[1600px] mx-auto px-3.5 py-3.5 sm:px-6 sm:py-4 lg:px-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 py-3.5 sm:px-6 sm:py-4 lg:px-8">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <Link href="/" aria-label="AbokiNews home" className="mr-auto shrink-0">
+          <Link
+            href="/"
+            aria-label="AbokiNews home"
+            className="mr-auto shrink-0"
+          >
             <Image
               src="/images/logo.png"
               width={120}
@@ -116,7 +121,9 @@ export default function Header() {
               <>
                 {(user.is_superuser || user.is_staff) && (
                   <Button
-                    variant={pathname === "/superadmin" ? "default" : "secondary"}
+                    variant={
+                      pathname === "/superadmin" ? "default" : "secondary"
+                    }
                     size="sm"
                     asChild
                     className="px-2.5 sm:px-3"
@@ -151,12 +158,12 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild className="px-2.5 sm:px-3">
-                  <Link href="/login">{t("nav_login", "Login")}</Link>
-                </Button>
-                <Button size="sm" asChild className="px-2.5 sm:px-3">
-                  <Link href="/signup">{t("nav_signup", "Sign Up")}</Link>
-                </Button>
+                <AuthDialog initialMode="login">
+                  {t("nav_login", "Login")}
+                </AuthDialog>
+                <AuthDialog initialMode="signup">
+                  {t("nav_signup", "Sign Up")}
+                </AuthDialog>
               </>
             )}
             <Sheet open={open} onOpenChange={setOpen}>
@@ -206,7 +213,12 @@ export default function Header() {
                 type="search"
                 className="min-w-0"
               />
-              <Button type="submit" variant="outline" aria-label="Search" className="shrink-0">
+              <Button
+                type="submit"
+                variant="outline"
+                aria-label="Search"
+                className="shrink-0"
+              >
                 <Search aria-hidden="true" />
                 <span className="hidden sm:inline">
                   {t("header_search_btn", "Search")}
@@ -215,7 +227,10 @@ export default function Header() {
             </form>
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-                <Label htmlFor="news-country" className="text-xs sm:text-sm truncate">
+                <Label
+                  htmlFor="news-country"
+                  className="text-xs sm:text-sm truncate"
+                >
                   {t("header_country", "Country")}
                 </Label>
                 <Select
@@ -226,7 +241,10 @@ export default function Header() {
                     window.dispatchEvent(new Event("news-location"));
                   }}
                 >
-                  <SelectTrigger id="news-country" className="w-full sm:w-40 min-w-0">
+                  <SelectTrigger
+                    id="news-country"
+                    className="w-full sm:w-40 min-w-0"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="news-select">
@@ -248,11 +266,17 @@ export default function Header() {
                   htmlFor="news-language"
                   className="inline-flex items-center gap-1 text-xs sm:text-sm truncate"
                 >
-                  <Languages className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <Languages
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>{t("header_language", "Language")}</span>
                 </Label>
                 <Select value={lang} onValueChange={setLanguage}>
-                  <SelectTrigger id="news-language" className="w-full sm:w-36 min-w-0">
+                  <SelectTrigger
+                    id="news-language"
+                    className="w-full sm:w-36 min-w-0"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="news-select">
@@ -269,7 +293,7 @@ export default function Header() {
         </div>
         <nav
           aria-label="Main navigation"
-          className="hidden lg:flex pill-balance gap-1 mt-3"
+          className="hidden lg:flex flex flex-wrap gap-1 mt-3"
         >
           {navigation()}
         </nav>
