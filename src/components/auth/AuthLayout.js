@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,14 +41,29 @@ export function PasswordInput({ visible, onToggle, toggleLabel = "password", ...
   );
 }
 
-export default function AuthLayout({ mode, title, description, children }) {
+export default function AuthLayout({ mode, title, description, children, embedded = false }) {
+  const headingId = useId();
+  const Heading = embedded ? "h2" : "h1";
   const [googleError, setGoogleError] = useState("");
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("google_error");
     setGoogleError(googleErrors[code] || "");
   }, []);
+  const form = (
+    <div className="auth-form-inner">
+      <p className="auth-eyebrow">YOUR ABOKINEWS ACCOUNT</p>
+      <Heading id={headingId} className="auth-form-heading">{title}</Heading>
+      <p className="auth-description">{description}</p>
+      {googleError && <div className="mb-5"><AuthError error={googleError} /></div>}
+      {children}
+      <p className="auth-security"><LockKeyhole size={12} aria-hidden="true" /> Your password stays private. Your reading stays yours.</p>
+    </div>
+  );
+  if (embedded) {
+    return <section className="auth-form-panel auth-embedded" aria-labelledby={headingId}>{form}</section>;
+  }
   return (
-    <section className={`auth-page auth-page--${mode}`} aria-labelledby="auth-title">
+    <section className={`auth-page auth-page--${mode}`} aria-labelledby={headingId}>
       <aside className="auth-editorial" aria-label="Your AbokiNews account">
         <div className="auth-edition"><span className="auth-edition-mark" /> THE READER’S EDITION <span>ABOKINEWS</span></div>
         <div className="auth-editorial-copy">
@@ -66,14 +81,7 @@ export default function AuthLayout({ mode, title, description, children }) {
       </aside>
       <div className="auth-form-panel">
         <div className="auth-form-top"><Link href="/" className="auth-back">← Back to the news</Link><span>{mode === "login" ? "SIGN IN" : "JOIN US"}</span></div>
-        <div className="auth-form-inner">
-          <p className="auth-eyebrow">YOUR ABOKINEWS ACCOUNT</p>
-          <h1 id="auth-title">{title}</h1>
-          <p className="auth-description">{description}</p>
-          {googleError && <div className="mb-5"><AuthError error={googleError} /></div>}
-          {children}
-          <p className="auth-security"><LockKeyhole size={12} aria-hidden="true" /> Your password stays private. Your reading stays yours.</p>
-        </div>
+        {form}
       </div>
     </section>
   );
