@@ -18,7 +18,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { buildApiUrl } from "../lib/api";
 
@@ -53,22 +52,22 @@ export default function ForgotPassword() {
           throw new Error(
             data?.detail ||
               data?.identifier?.[0] ||
-              "Unable to process password reset request right now."
+              "Unable to process password reset request right now.",
           );
         }
         setStatusMessage(
           data?.detail ||
-            "If an account matches that username or email, password recovery instructions have been sent."
+            "If an account matches that username or email, password recovery instructions have been sent.",
         );
       } else {
         setStatusMessage(
-          "If an account matches that username or email, password recovery instructions have been sent."
+          "If an account matches that username or email, password recovery instructions have been sent.",
         );
       }
       setSubmitted(true);
     } catch (err) {
       setError(
-        err.message || "Unable to send recovery instructions right now."
+        err.message || "Unable to send recovery instructions right now.",
       );
     } finally {
       setLoading(false);
@@ -83,22 +82,18 @@ export default function ForgotPassword() {
             <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
             Account Recovery
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             Forgot your password?
-          </CardTitle>
+          </h1>
           <CardDescription>
-            Enter the username or email address linked to your AbokiNews
-            account and we will send password recovery instructions.
+            Enter the username or email address linked to your AbokiNews account
+            and we will send password recovery instructions.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           {submitted ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="space-y-5"
-            >
+            <div role="status" aria-live="polite" className="space-y-5">
               <div className="rounded-xl border border-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 text-sm text-emerald-950 dark:text-emerald-100 flex items-start gap-3">
                 <CheckCircle2
                   className="h-5 w-5 text-emerald-700 shrink-0 mt-0.5"

@@ -130,15 +130,18 @@ export default function NewsList({
                       {article.source?.name} ·{" "}
                       {formatNewsDate(article.published_at)}
                     </p>
-                    {typeof article.left_coverage === "number" && (
-                      <div className="mb-3">
-                        <CoverageBar
-                          article={article}
-                          compact={true}
-                          showLegend={false}
-                        />
-                      </div>
-                    )}
+                    {article.total_sources > 1 &&
+                      Array.isArray(article.perspectives) &&
+                      article.perspectives.length > 1 &&
+                      typeof article.left_coverage === "number" && (
+                        <div className="mb-3">
+                          <CoverageBar
+                            article={article}
+                            compact={true}
+                            showLegend={false}
+                          />
+                        </div>
+                      )}
                     <SaveStoryButton
                       articleId={article.id}
                       initiallySaved={saved || savedIds.includes(article.id)}

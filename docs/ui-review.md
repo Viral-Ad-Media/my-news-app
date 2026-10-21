@@ -52,3 +52,75 @@ Reviewed the fold and full-page contact sheets at **1440, 768 and 390px**. The f
 7. **Phone:** navigation folds into a keyboard-accessible sheet; the country filter wraps below search and stories become one column. The first screen retains the lead headline and Read story action. The sidebar follows the story list, preserving reading priority.
 
 The second warning is below-fold content: this is a scrolling reader with ten full summaries, rather than an operational dashboard that must expose every module at once. The three-story briefing provides the first-screen choice, with the full list below. No inspection exceptions were used. The real starter stories were used only through a local fixture API for review; no new production seed content or fabricated photographs need replacing.
+
+## October 20: editorial SEO workspace and account dialogs
+
+Uses taste-skill's **Achromatic ledger**, seed **2120622647**, retaining local
+Geist, the AbokiNews wordmark, existing theme support and the Next/Tailwind 3
+stack. The app-screen run applies to forms and editor/detail screens. There was
+no redraw. The public top navigation is retained because this is an existing
+reader; its phone folding rule was repaired rather than replacing the shell.
+
+Inventory: editorial headlines, source references, summaries, article bodies,
+publication dates, topic categories, saved stories, reader sessions, the existing
+wordmark and the new search/social metadata. The product's face is its reading
+desk and source attribution; the editor's signature element is a live preview of
+the post's own search result beside the writing fields. Blue marks the preview
+and editorial score, while chrome stays neutral. No stock photos, fake audience
+numbers or testimonials were added.
+
+Questions: **editor** — what should I improve before publishing this post?
+**login** — how do I return to my reading desk? **signup** — how do I create a
+reader account? **article** — what is the explanation and where is its reference?
+
+| Before | After | Why |
+| --- | --- | --- |
+| Desktop login form displaced below a benefits panel | One shared auth frame with aligned form and reading benefits | The sign-in task stays visible |
+| No h1 on login | One 24px h1 on each full auth page | Clear orientation and semantics |
+| Desktop navigation stayed visible on phones | Tailwind visibility works after removing a custom `display:flex` override | Frees the first phone screen for its task |
+| Account links only changed pages | Lazy-loaded Radix dialogs plus direct page routes | Quick access without losing the reading context |
+| Large admin banner and six separate KPI tiles on every tab | Compact title/navigation; real count strip only on overview | Writing and search preview lead on the editor tab |
+| No saved SEO controls or draft checks | Editable search/social fields, clear score breakdown and preview | Connects editorial changes to what they produce |
+| Unrelated category image and generic coverage for a new explainer | Missing images stay absent; comparison panels need multiple supplied perspectives | Displays the post's real material |
+
+The dialog's only entrance is a 180ms transform/opacity response, with a 160ms
+opaque-overlay fade. Keyboard activation and reduced motion remove travel. Inputs
+do not stagger or reveal on scroll. Opening focuses the username; switching modes
+focuses the new form, and Escape returns focus to the trigger. Full-page and popup
+forms have separate IDs. The user can keep the full-page flow.
+
+### Screenshot critique
+
+The fold and full-page sheets were opened at 1440/768/390px, alongside dark mobile
+login and signup states and a populated editor preview. The five new source-linked
+explainers were served through a local fixture API for review; no production
+accounts were used or created. The live editor review called the actual backend
+analysis function through the frontend proxy. No sample text needs replacing in
+the production UI: review data comes from the pending editorial batch.
+
+1. **Reading order:** auth opens on a named form; editor writing and search settings share the first desktop screen. The score is secondary to the post, with each failed check naming an action.
+2. **Frame:** centred auth panels share edges; the 1280px editor uses two writing/settings columns and a full-width post list. The article's independent right rail may end before the full report; that retained ragged-row warning is preferable to stretching short topic/assistant panels into empty frames.
+3. **Colour and face:** the existing wordmark remains visible. Only the search preview and score take blue; navigation and controls stay neutral. Dark dialogs have opaque surfaces rather than blur/glass.
+4. **Numbers:** score points come from the backend's twelve checks and sum to 100. Character and word counts follow the current draft. Missing analysis is a dash, not a fabricated zero. Existing totals come from the overview API.
+5. **Missing data:** no image produces no image region; empty analysis explains how to start. Service failures leave the draft and save action available. Noindex is stated separately from the score.
+6. **Labels:** field labels stay beside their fields and the selected tabs identify Search, Social or Advanced. Counts and advice wrap instead of colliding. No chart legends are needed.
+7. **Phone:** navigation folds, auth forms fit the width, popup signup scrolls within the dialog, and editor sections stack. Password rules change with input, and focus remains visible. Longer forms intentionally scroll; they do not shrink text to fit a single screen.
+
+Final automated measurements and verification results are recorded with the PR.
+The static taste-skill check permits the auth dialog's floating shadow; resting
+panels have no new shadows. Physical-device and production-provider testing are
+separate from the local browser checks.
+
+| Screen / check | Earlier inspection | Final inspection |
+| --- | --- | --- |
+| Full-page login, all three widths | 1 failure, 3 warnings | 0 failures, 0 warnings |
+| Full-page signup, all three widths | Not separately measured before restyle | 0 failures, 0 warnings |
+| Admin | Overview: 1 failure, 3 warnings | New post editor: 0 failures, 0 warnings |
+| New explainer detail | First review: 2 failures, 1 warning | 0 failures, 1 warning (independent sidebar length) |
+| Static check of changed auth/editor components | — | 0 failures, 1 warning (real floating dialog shadow) |
+
+The final editor fold was re-captured after warming the development API routes;
+the earlier cold-start capture showed the legitimate loading state instead of the
+loaded editor. Final fold and contact sheets were opened for every width. The
+populated preview used the real analysis function and showed 55/100 with six
+specific improvements, rather than a fabricated perfect score.
