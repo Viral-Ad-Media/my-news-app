@@ -11,7 +11,27 @@ export function buildServerApiUrl(path) {
 
 export function sameOrigin(request) {
   const origin = request.headers.get("origin");
-  return origin === new URL(request.url).origin;
+  const expected = new URL(request.url);
+  if (origin === expected.origin) return true;
+  // Next's dev server normalizes its Request URL to localhost even when the
+  // browser uses 127.0.0.1. Keep production strict and match the actual dev Host.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    expected.hostname === "localhost"
+  ) {
+    try {
+      const actual = new URL(origin);
+      return (
+        ["127.0.0.1", "[::1]"].includes(actual.hostname) &&
+        actual.port === expected.port &&
+        actual.protocol === expected.protocol &&
+        origin === `${expected.protocol}//${request.headers.get("host")}`
+      );
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 export function setSession(response, data, rememberMe = false) {
