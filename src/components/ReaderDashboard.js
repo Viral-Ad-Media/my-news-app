@@ -55,6 +55,10 @@ export default function ReaderDashboard() {
         return;
       }
       const userData = await sessionRes.json();
+      if (userData?.authenticated === false) {
+        setUser(null);
+        return;
+      }
       setUser(userData);
 
       const categoriesUrl = buildApiUrl("/categories/?page_size=20");

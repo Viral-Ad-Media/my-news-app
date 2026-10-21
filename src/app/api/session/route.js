@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import {
   buildServerApiUrl,
   clearSession,
@@ -60,16 +61,26 @@ export async function POST(request) {
   }
 }
 
+function signedOutSession() {
+  const result = NextResponse.json({ authenticated: false });
+  result.headers.set("Cache-Control", "private, no-store");
+  clearSession(result);
+  return result;
+}
+
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    if (!cookieStore.get("news_access")?.value && !cookieStore.get("news_refresh")?.value)
+      return signedOutSession();
     const { response, session } = await readerRequest("/auth/user/");
+    if (response.status === 401) return signedOutSession();
     const result = NextResponse.json(
-      response.ok ? await response.json() : { detail: "Please login" },
+      response.ok ? await response.json() : { detail: "Session check unavailable" },
       { status: response.status },
     );
     result.headers.set("Cache-Control", "private, no-store");
     if (session) setSession(result, session);
-    if (response.status === 401) clearSession(result);
     return result;
   } catch {
     return NextResponse.json(
