@@ -185,7 +185,7 @@ export default function ArticleTranslator({
         <div className="flex items-center gap-2 min-w-0">
           <Languages className="h-4 w-4 text-foreground shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <span className="text-sm font-medium">
+            <span className="text-xs font-bold uppercase tracking-wider">
               {t("translate_heading", "Multi-Language Reader")}
             </span>
             {engineLabel && translated && (

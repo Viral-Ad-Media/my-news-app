@@ -15,7 +15,6 @@ async function proxy(request, { params }) {
     preferences: ["GET", "PUT"],
     ask: ["POST"],
     "superadmin/overview": ["GET"],
-    "superadmin/seo/analyze": ["POST"],
     "superadmin/articles": ["POST"],
     "superadmin/categories": ["POST"],
     "superadmin/actions": ["POST"],

@@ -219,7 +219,6 @@ test("login, forgot password, signup password toggle, and reader dashboard work 
 
   const langSelect = page.getByLabel("Language").first();
   await expect(langSelect).toBeVisible();
-  await langSelect.click();
-  await page.getByRole("option", { name: /Français/ }).click();
+  await langSelect.selectOption("fr");
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("fr");
 });

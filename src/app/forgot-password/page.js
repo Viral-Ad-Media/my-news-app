@@ -1,7 +1,6 @@
 import ForgotPassword from "../../components/ForgotPassword";
 
 export const metadata = {
-  robots: { index: false, follow: true },
   title: "Forgot Password | AbokiNews",
   description: "Recover your AbokiNews reader account password.",
 };

@@ -1,9 +1,4 @@
-import Signup from "../../components/Signup";
-
-export const metadata = {
-  title: "Create account | AbokiNews",
-  robots: { index: false, follow: true },
-};
+import Signup from '../../components/Signup';
 
 export default function SignupPage() {
   return (
