@@ -223,3 +223,74 @@ test("login, forgot password, signup password toggle, and reader dashboard work 
   await page.getByRole("option", { name: /Français/ }).click();
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("fr");
 });
+
+for (const width of [390, 1200]) {
+  for (const path of ["/login", "/signup"]) {
+    test(`account page ${path} is usable at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(path);
+      const google = page.getByRole("link", { name: "Continue with Google" });
+      await expect(google).toBeVisible();
+      await expect(google).toHaveAttribute("href", /\/api\/auth\/google\?mode=/);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await page.getByLabel("Username", { exact: path === "/signup" }).fill("reader");
+      const password = page.locator(path === "/login" ? "#current-password" : "#password1");
+      await password.fill("reader-password-123");
+      await page.getByRole("button", { name: "Show password", exact: true }).click();
+      await expect(password).toHaveAttribute("type", "text");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+      await page.screenshot({ path: `test-results/auth-${path.slice(1)}-${width}.png`, fullPage: true });
+    });
+  }
+}
+
+test("Google setup errors are explained on the account page", async ({ page }) => {
+  await page.goto("/login?google_error=unavailable");
+  await expect(page.getByRole("alert").filter({ hasText: "Google sign-in is not available yet" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue with Google" })).toBeVisible();
+});
+
+test("password sign-in submits credentials and opens the reader dashboard", async ({ page }) => {
+  let submitted: Record<string, unknown> = {};
+  await page.route("**/api/session", async (route) => {
+    if (route.request().method() === "POST") {
+      submitted = route.request().postDataJSON();
+      return route.fulfill({ json: { authenticated: true, username: "Test reader" } });
+    }
+    return route.fulfill({ json: { username: "Test reader" } });
+  });
+  await page.goto("/login");
+  await page.getByLabel("Username or email", { exact: true }).fill("reader");
+  await page.locator("#current-password").fill("reader-password-123");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  expect(submitted).toEqual({ username: "reader", password: "reader-password-123", rememberMe: true });
+});
+
+test("signup explains mismatched passwords before sending a request", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByLabel("Username", { exact: true }).fill("reader");
+  await page.getByLabel("Email address", { exact: true }).fill("reader@example.com");
+  await page.locator("#password1").fill("reader-password-123");
+  await page.locator("#password2").fill("different-password-123");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Passwords do not match." })).toBeVisible();
+  await expect(page).toHaveURL(/\/signup$/);
+});
+
+test("signup creates the account and establishes a reader session", async ({ page }) => {
+  let registered: Record<string, unknown> = {};
+  await page.route("http://news-api.test/api/auth/registration/", (route) => {
+    registered = route.request().postDataJSON();
+    return route.fulfill({ status: 201, json: { detail: "Account created" } });
+  });
+  await page.route("**/api/session", (route) => route.fulfill({ json: { authenticated: true, username: "Test reader" } }));
+  await page.goto("/signup");
+  await page.getByLabel("Username", { exact: true }).fill("reader");
+  await page.getByLabel("Email address", { exact: true }).fill("reader@example.com");
+  await page.locator("#password1").fill("reader-password-123");
+  await page.locator("#password2").fill("reader-password-123");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  expect(registered).toEqual({ username: "reader", email: "reader@example.com", password1: "reader-password-123", password2: "reader-password-123" });
+});

@@ -51,7 +51,7 @@ export default function Header() {
     const update = () =>
       fetch("/api/session")
         .then((res) => (res.ok ? res.json() : null))
-        .then(setUser)
+        .then((data) => setUser(data?.authenticated === false ? null : data))
         .catch(() => setUser(null));
     update();
     window.addEventListener("news-session", update);
@@ -108,8 +108,8 @@ export default function Header() {
           >
             <Image
               src="/images/logo.png"
-              width={120}
-              height={32}
+              width={256}
+              height={93}
               alt="AbokiNews"
               priority
               className="dark:invert w-24 sm:w-[120px] h-auto"

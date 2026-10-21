@@ -27,8 +27,8 @@ for (const width of [390, 768, 1440])
   test(`auth pages use readable forms at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     for (const [path, title] of [
-      ["/login", "Sign in to AbokiNews"],
-      ["/signup", "Create your account"],
+      ["/login", "Welcome back."],
+      ["/signup", "Make room for better news."],
     ]) {
       await page.goto(path);
       await expect(
@@ -39,6 +39,8 @@ for (const width of [390, 768, 1440])
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBeTruthy();
+      await expect(page.locator("main form")).toHaveCount(1);
+      await expect(page.getByRole("link", { name: "Continue with Google" })).toBeVisible();
       const input = page.locator("#username");
       await expect(input).toBeVisible();
       const rect = await input.boundingBox();
@@ -56,8 +58,10 @@ test("account popup switches forms, traps focus and restores it after Escape", a
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
+  await expect(dialog.locator("form")).toHaveCount(1);
+  await expect(dialog.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", /mode=login&remember=1/);
   await expect(
-    dialog.getByRole("textbox", { name: "Username or Email" }),
+    dialog.getByRole("textbox", { name: /username or email/i }),
   ).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   expect(
@@ -67,6 +71,8 @@ test("account popup switches forms, traps focus and restores it after Escape", a
     await dialog.evaluate((el) => getComputedStyle(el).animationName),
   ).toBe("none");
   await dialog.getByRole("link", { name: "Create your account" }).click();
+  await expect(dialog.locator("form")).toHaveCount(1);
+  await expect(dialog.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", /mode=signup&remember=1/);
   await expect(dialog.getByLabel("Password", { exact: true })).toBeVisible();
   await dialog
     .getByLabel("Password", { exact: true })
@@ -102,7 +108,7 @@ test("failed login shows the error inside the popup without losing entered detai
   await page.goto("/login"); // full-page fallback shares the same form
   await page.locator("#username").fill("reader");
   await page.locator("#current-password").fill("bad-password");
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
     page
       .getByRole("alert")
@@ -289,12 +295,36 @@ test("successful popup sign-in establishes the shared reader flow and closes the
   await page.getByRole("button", { name: "Login", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog
-    .getByRole("textbox", { name: "Username or Email" })
+    .getByRole("textbox", { name: /username or email/i })
     .fill("reader");
   await dialog
     .getByLabel("Password", { exact: true })
     .fill("test-only-password");
-  await dialog.getByRole("button", { name: "Sign In", exact: true }).click();
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/dashboard/);
   await expect(dialog).not.toBeVisible();
+});
+
+test("popup keeps unique field IDs and the unchecked remember-me choice on failure", async ({ page }) => {
+  let submitted: Record<string, unknown> = {};
+  await page.route("**/api/session", (route) => {
+    if (route.request().method() === "POST") submitted = route.request().postDataJSON();
+    return route.fulfill({ status: 401, json: { detail: "Credentials were not accepted." } });
+  });
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Login", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("#account-dialog-username")).toBeFocused();
+  expect(await page.evaluate(() => {
+    const ids = Array.from(document.querySelectorAll("[id]")).map((node) => node.id);
+    return ids.length === new Set(ids).size;
+  })).toBe(true);
+  await dialog.getByLabel("Remember me for 30 days").uncheck();
+  await expect(dialog.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", /mode=login&remember=0/);
+  await dialog.getByLabel("Username or email", { exact: true }).fill("reader@example.com");
+  await dialog.getByLabel("Password", { exact: true }).fill("test-only-password");
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Credentials were not accepted.");
+  expect(submitted).toEqual({ username: "reader@example.com", password: "test-only-password", rememberMe: false });
+  await expect(dialog.getByLabel("Username or email", { exact: true })).toHaveValue("reader@example.com");
 });

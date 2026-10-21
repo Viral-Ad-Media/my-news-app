@@ -92,6 +92,10 @@ export default function SuperadminDashboard() {
         return;
       }
       const sessionUser = await sessionRes.json();
+      if (sessionUser?.authenticated === false) {
+        setUser(null);
+        return;
+      }
       setUser(sessionUser);
 
       const res = await fetch("/api/reader/superadmin/overview", { signal });
