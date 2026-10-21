@@ -172,3 +172,14 @@ npm run test:ui
 ```
 
 The browser suite mocks API responses and does not modify production data. CI also runs these checks.
+
+## Google sign-in
+
+Both account pages offer Google sign-in through a server-side authorization code flow with state validation and PKCE. Google tokens are verified by Django/allauth and exchanged for the existing HttpOnly reader JWT cookies. Tokens and client secrets are never passed to browser JavaScript.
+
+1. Create a **Web application** OAuth client in Google Cloud and configure the consent screen. Add test users while the consent screen is in testing mode.
+2. Add `http://localhost:3000/api/auth/google/callback` to the client's authorized redirect URIs. Add `https://<frontend-domain>/api/auth/google/callback` for production. The URI must match exactly.
+3. Set the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the frontend's `.env.development.local` and Django's `.env`. For production, set them on both Vercel projects. These variables are server-only; do not prefix them with `NEXT_PUBLIC_`.
+4. Set `GOOGLE_REDIRECT_URI` on the frontend to the matching callback URL. Restart local servers or redeploy both projects.
+
+Django exposes `POST /api/auth/google/` using its existing allauth tables; no new model migrations are needed. Existing migrations must already be applied. Configure the Google provider through environment variables as above rather than creating a duplicate Google SocialApp in Django admin. Existing password accounts are not automatically linked just because the email matches. A missing configuration or cancelled flow returns to the account page with an explanatory message.
