@@ -46,3 +46,6 @@ next-env.d.ts
 *.env
 *.env.*
 !.env.example
+
+# Isolated browser-test build cache (keeps the reader dev server untouched)
+/.next-test/

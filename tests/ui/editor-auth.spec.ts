@@ -12,6 +12,7 @@ const entry = {
 };
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { localStorage.setItem("news-location", "ng"); });
   await page.route("http://news-api.test/api/**", (r) =>
     r.fulfill({ json: { results: [], count: 0 } }),
   );
@@ -161,9 +162,11 @@ test("editor analyzes an unsaved draft and persists SEO settings with the post",
     saved = r.request().postDataJSON();
     return r.fulfill({ json: { ...saved, id: 2 } });
   });
+  await page.context().addCookies([{ name: "news_access", value: "editor-browser-fixture", domain: "127.0.0.1", path: "/", httpOnly: true }]);
   await page.goto("/superadmin?tab=articles");
   await page.locator("#admin-post-title").fill(entry.title);
   await page.locator("#admin-post-desc").fill(entry.description);
+  await page.locator("#admin-post-content").fill(entry.content);
   await page.locator("#seo-focus").fill("solar power");
   await page.locator("#seo-title").fill("Solar power: a practical guide");
   await expect(page.getByText("75/100")).toBeVisible();
@@ -216,7 +219,8 @@ test("public article renders saved search/social metadata, robots, schema and re
   await expect(
     page.getByRole("heading", { name: "Solar power choices" }),
   ).toBeVisible();
-  await expect(page.locator("article img")).toHaveCount(0);
+  await expect(page.locator("article img")).toHaveCount(1);
+  await expect(page.getByText("Illustrative photo", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "How Left, Center & Right Covered This Story",
@@ -241,6 +245,7 @@ test("SEO service failures keep the editor usable and preserve the draft", async
   await page.route("**/api/reader/superadmin/seo/analyze", (r) =>
     r.fulfill({ status: 503, json: { detail: "Unavailable" } }),
   );
+  await page.context().addCookies([{ name: "news_access", value: "editor-browser-fixture", domain: "127.0.0.1", path: "/", httpOnly: true }]);
   await page.goto("/superadmin?tab=articles");
   await page.locator("#admin-post-title").fill("An unsaved editorial draft");
   await expect(

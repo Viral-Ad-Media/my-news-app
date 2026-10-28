@@ -21,24 +21,19 @@ export async function GET(request) {
   if (location) query.set("location", location);
   if (bias) query.set("bias", bias);
 
-  let articles = [];
-  const apiUrl = buildServerApiUrl(
-    `/news/${query.toString() ? `?${query.toString()}` : ""}`,
-  );
-
-  if (apiUrl) {
-    try {
-      const response = await fetch(apiUrl, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(12000),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        articles = listItems(data);
-      }
-    } catch {
-      articles = [];
-    }
+  const upstreamQuery = new URLSearchParams(query);
+  upstreamQuery.set("page_size", "30");
+  const apiUrl = buildServerApiUrl(`/news/?${upstreamQuery}`);
+  let articles;
+  try {
+    if (!apiUrl) throw new Error("Unconfigured API");
+    const response = await fetch(apiUrl, { cache: "no-store", signal: AbortSignal.timeout(12000) });
+    if (!response.ok) throw new Error("Unavailable API");
+    articles = listItems(await response.json());
+  } catch {
+    return new Response("RSS feed is temporarily unavailable. Please try again later.", {
+      status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
   }
 
   const labelParts = [];

@@ -4,14 +4,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { listItems, buildApiUrl } from "../lib/api";
+import useCountry from "../lib/use-country";
+import { articleMatchesCountry } from "../lib/countries";
+import { listItems, buildApiUrl, withinPublicationWindow } from "../lib/api";
 
 const SUMMARY_TABS = ["Last Day", "Last Week", "Last Month"];
 
+/** @param {{ activeTab?: string, setActiveTab?: (tab: string) => void }} props */
 export default function NewsSummary({
   activeTab: controlledTab,
   setActiveTab: setControlledTab,
-}) {
+} = {}) {
+  const country = useCountry();
   const [internalTab, setInternalTab] = useState("Last Week");
   const activeTab = controlledTab ?? internalTab;
   const setActiveTab = setControlledTab ?? setInternalTab;
@@ -20,7 +24,8 @@ export default function NewsSummary({
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let url = buildApiUrl("/news/");
+    if (!country) return;
+    let url = buildApiUrl(`/news/?location=${country}`);
     if (!url) {
       setError("API base URL is not configured.");
       setNewsSummary([]);
@@ -28,13 +33,14 @@ export default function NewsSummary({
     }
 
     if (activeTab === "Last Day") {
-      url += "?filter=last_day";
+      url += "&filter=last_day";
     } else if (activeTab === "Last Week") {
-      url += "?filter=last_week";
+      url += "&filter=last_week";
     } else if (activeTab === "Last Month") {
-      url += "?filter=last_month";
+      url += "&filter=last_month";
     }
 
+    setNewsSummary([]);
     const controller = new AbortController();
     fetch(url, { signal: controller.signal })
       .then((response) => {
@@ -42,7 +48,7 @@ export default function NewsSummary({
         return response.json();
       })
       .then((data) => {
-        setNewsSummary(listItems(data).slice(0, 3));
+        setNewsSummary(listItems(data).filter(article => withinPublicationWindow(article, activeTab === "Last Day" ? "last_day" : activeTab === "Last Week" ? "last_week" : "last_month")).slice(0, 3));
         setError(null);
       })
       .catch((err) => {
@@ -51,7 +57,7 @@ export default function NewsSummary({
         setNewsSummary([]);
       });
     return () => controller.abort();
-  }, [activeTab]);
+  }, [activeTab, country]);
 
   return (
     <section
@@ -83,9 +89,9 @@ export default function NewsSummary({
 
         <TabsContent value={activeTab} className="mt-3 space-y-3">
           {error && <p className="text-xs text-destructive">{error}</p>}
-          {newsSummary.length > 0 ? (
+          {newsSummary.filter(article => articleMatchesCountry(article, country)).length > 0 ? (
             <ul className="space-y-2.5 divide-y divide-border/60">
-              {newsSummary.map((news) => (
+              {newsSummary.filter(article => articleMatchesCountry(article, country)).map((news) => (
                 <li key={news.id} className="pt-2.5 first:pt-0">
                   <Link
                     href={`/news/${news.id}`}
@@ -111,7 +117,7 @@ export default function NewsSummary({
               Window: {activeTab.toLowerCase()}
             </span>
             <Link
-              href="/timelines"
+              href={`/timelines?filter=${activeTab === "Last Day" ? "last_day" : activeTab === "Last Week" ? "last_week" : "last_month"}`}
               className="inline-flex items-center gap-1 font-semibold hover:underline underline-offset-4"
             >
               Full timeline

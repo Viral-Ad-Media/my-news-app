@@ -19,7 +19,7 @@ export default function PersonalizedNewsFeed() {
         </span>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/news/custom"
+            href="/topics?manage=1#followed-categories"
             className="inline-flex items-center gap-1 font-semibold underline underline-offset-4 hover:text-muted-foreground"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />

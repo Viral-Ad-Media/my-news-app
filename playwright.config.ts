@@ -20,6 +20,7 @@ export default defineConfig({
       url: "http://127.0.0.1:3210",
       reuseExistingServer: !process.env.CI,
       env: {
+        NEWS_TEST_INSTANCE: "1",
         NEXT_PUBLIC_API_BASE_URL: "http://news-api.test/api",
         API_SERVER_URL: "http://127.0.0.1:3213/api",
       },

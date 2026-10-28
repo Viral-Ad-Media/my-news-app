@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const Login = dynamic(() => import("./Login"));
 const Signup = dynamic(() => import("./Signup"));
 
-export default function AuthDialog({ initialMode = "login", children }) {
+export default function AuthDialog({ initialMode = "login", children, className = "" }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState(initialMode);
   const pathname = usePathname();
@@ -27,7 +27,7 @@ export default function AuthDialog({ initialMode = "login", children }) {
         <Button
           variant={initialMode === "login" ? "ghost" : "default"}
           size="sm"
-          className="px-2.5 sm:px-3"
+          className={`px-2.5 sm:px-3 ${className}`}
         >
           {children}
         </Button>

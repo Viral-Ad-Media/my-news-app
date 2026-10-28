@@ -76,7 +76,7 @@ export default function CategoryDetails({ params }) {
         </div>
 
         <Button variant="outline" size="sm" asChild>
-          <Link href="/news/custom">
+          <Link href="/topics?manage=1#followed-categories">
             <SlidersHorizontal className="h-4 w-4 mr-1.5" aria-hidden="true" />
             Manage Topic Preferences
           </Link>

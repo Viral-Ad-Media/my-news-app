@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Edit3,
   FolderKanban,
-  Globe2,
   LayoutDashboard,
   Lock,
   Newspaper,
@@ -78,8 +77,6 @@ export default function SuperadminDashboard() {
   const [submittingCategory, setSubmittingCategory] = useState(false);
 
   // Pipeline action state
-  const [runningAction, setRunningAction] = useState("");
-  const [rssImportUrl, setRssImportUrl] = useState("");
 
   const loadOverview = useCallback(async (signal) => {
     setLoading(true);
@@ -168,7 +165,7 @@ export default function SuperadminDashboard() {
           ),
           title: articleForm.title,
           description: articleForm.description,
-          content: articleForm.content || articleForm.description,
+          content: articleForm.content,
           categories: articleForm.categories
             .split(",")
             .map((c) => c.trim())
@@ -311,32 +308,6 @@ export default function SuperadminDashboard() {
     }
   }
 
-  async function handleRunPipeline(action, extraPayload = {}) {
-    setRunningAction(action);
-    setStatusBanner("");
-    setErrorBanner("");
-    try {
-      const res = await fetch("/api/reader/superadmin/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...extraPayload }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.detail || "Pipeline action failed.");
-      }
-      setStatusBanner(data?.output || `Completed pipeline action: ${action}`);
-      if (extraPayload?.url) {
-        setRssImportUrl("");
-      }
-      await loadOverview();
-    } catch (err) {
-      setErrorBanner(err.message || "Pipeline execution failed.");
-    } finally {
-      setRunningAction("");
-    }
-  }
-
   async function handleLogout() {
     await fetch("/api/session", { method: "DELETE" });
     window.dispatchEvent(new Event("news-session"));
@@ -379,7 +350,7 @@ export default function SuperadminDashboard() {
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
               {error ||
-                "Sign in with your superadmin account (viraladmediacontent@gmail.com) to publish blog posts, manage categories and sources, and administer reader accounts."}
+                "Sign in with your superadmin account to publish blog posts, manage categories and sources, and administer reader accounts."}
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Button asChild>
@@ -652,100 +623,18 @@ export default function SuperadminDashboard() {
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Run idempotent data ingestion commands to synchronize starter
-                  blog posts, pull live headlines from NewsAPI.org &amp;
-                  NewsData.io, or refresh AllSides multi-perspective roundups.
+                  Manage permitted feeds, scheduled publishing, persistent run history
+                  and source health in the private administration workspace.
+                  Provider API commands remain available through the backend CLI.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Button
-                    type="button"
-                    variant="default"
-                    disabled={Boolean(runningAction)}
-                    onClick={() =>
-                      handleRunPipeline("fetch_news", { country: "ng" })
-                    }
-                  >
-                    <Newspaper className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                    {runningAction === "fetch_news"
-                      ? "Fetching NewsAPI & NewsData.io…"
-                      : "Fetch Live NewsAPI & NewsData.io (fetch_news)"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={Boolean(runningAction)}
-                    onClick={() => handleRunPipeline("seed_news")}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                    {runningAction === "seed_news"
-                      ? "Syncing Starter Stories…"
-                      : "Sync Starter Blog Posts (seed_news)"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={Boolean(runningAction)}
-                    onClick={() => handleRunPipeline("fetch_allsides")}
-                  >
-                    <Scale className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                    {runningAction === "fetch_allsides"
-                      ? "Syncing AllSides Roundups…"
-                      : "Sync AllSides Roundups"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={Boolean(runningAction)}
-                    onClick={() => handleRunPipeline("fetch_rss")}
-                  >
-                    <Globe2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                    {runningAction === "fetch_rss"
-                      ? "Syncing RSS Feeds…"
-                      : "Sync RSS / Atom Feeds (fetch_rss)"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setArticleForm(INITIAL_ARTICLE_FORM);
-                      setActiveTab("articles");
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-                    Write New Blog Post
-                  </Button>
+                  <Button asChild><Link href="/admin">Open administration</Link></Button>
+                  <Button asChild variant="outline"><Link href="/admin/sources">Configure and test feeds</Link></Button>
+                  <Button asChild variant="outline"><Link href="/admin/logs">View run history</Link></Button>
+                  <Button type="button" variant="secondary" onClick={() => {
+                    setArticleForm(INITIAL_ARTICLE_FORM); setActiveTab("articles");
+                  }}><Plus className="h-4 w-4 mr-1" aria-hidden="true" />Write New Blog Post</Button>
                 </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!rssImportUrl.trim()) return;
-                    handleRunPipeline("fetch_rss", {
-                      url: rssImportUrl.trim(),
-                    });
-                  }}
-                  className="pt-4 border-t border-border flex flex-col sm:flex-row gap-2"
-                >
-                  <Label htmlFor="admin-rss-url" className="sr-only">
-                    Import external RSS or Atom feed URL
-                  </Label>
-                  <Input
-                    id="admin-rss-url"
-                    type="url"
-                    value={rssImportUrl}
-                    onChange={(e) => setRssImportUrl(e.target.value)}
-                    placeholder="https://nairametrics.com/feed/ — Import any external RSS 2.0 or Atom feed URL"
-                    className="flex-1 min-w-0"
-                  />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    disabled={Boolean(runningAction) || !rssImportUrl.trim()}
-                    className="shrink-0"
-                  >
-                    Import Custom RSS URL
-                  </Button>
-                </form>
               </CardContent>
             </Card>
           </div>
@@ -873,6 +762,7 @@ export default function SuperadminDashboard() {
                       <Label htmlFor="admin-post-content">Article body</Label>
                       <textarea
                         id="admin-post-content"
+                        required
                         rows={12}
                         value={articleForm.content}
                         onChange={(e) =>
@@ -881,7 +771,7 @@ export default function SuperadminDashboard() {
                             content: e.target.value,
                           }))
                         }
-                        placeholder="Separate paragraphs with a blank line. Use ## for subheadings and [label](/news/123) for related links."
+                        placeholder="Write at least 400 words of source-grounded reporting. Separate short paragraphs with blank lines and include two useful ## subheadings."
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>

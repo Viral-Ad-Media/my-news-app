@@ -81,6 +81,7 @@ export default async function NewsDetails({ params }) {
     Array.isArray(article.tags) && article.tags.includes("explainer");
   const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
   const articleImage = getArticleImageUrl(article);
+  const readingMinutes = Math.max(1, Math.ceil(String(article.content || "").split(/\s+/).filter(Boolean).length / 220));
   const paragraphs = String(article.content || article.description || "")
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -110,7 +111,7 @@ export default async function NewsDetails({ params }) {
           </div>
         )}
 
-        <article className="md:col-span-2 lg:col-span-1 min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6 lg:p-8 order-1 lg:order-2 break-words">
+        <article className="editorial-article md:col-span-2 lg:col-span-1 min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6 lg:p-8 order-1 lg:order-2 break-words">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {Array.isArray(article.categories) &&
               article.categories.map((cat) => (
@@ -135,12 +136,13 @@ export default async function NewsDetails({ params }) {
             <div className="space-y-0.5 min-w-0">
               <div className="font-semibold text-foreground break-words">
                 {article.source?.name || "AbokiNews Desk"}
-                {article.author ? ` · By ${article.author}` : ""}
+                {article.author ? ` · ${article.article_prepared ? "Source reporting by" : "By"} ${article.author}` : ""}
               </div>
               <div>
                 <time dateTime={article.published_at}>
                   {formatNewsDate(article.published_at)}
                 </time>
+                <span> · {readingMinutes} min read</span>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -162,6 +164,7 @@ export default async function NewsDetails({ params }) {
           {articleImage && (
             <div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip mb-6 bg-muted/30">
               <Image
+                article={article}
                 src={articleImage}
                 alt={article.image_alt || article.title}
                 width={1000}
@@ -198,6 +201,7 @@ export default async function NewsDetails({ params }) {
               </div>
             )}
 
+          {article.article_prepared && <p className="text-xs text-muted-foreground mb-3">AI-assisted article based on the attributed source report.</p>}
           <h2 className="text-lg font-bold mb-3">Full Report</h2>
           <div className="max-w-[72ch]">
             <ArticleBody content={article.content || article.description} />

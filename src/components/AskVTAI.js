@@ -1,42 +1,56 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Sparkles, ArrowUpRight } from "lucide-react";
+import useCountry from "../lib/use-country";
+import { countryName } from "../lib/countries";
 import { useLanguage } from "../lib/i18n";
 export default function AskVTAI() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const country = useCountry();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const active = useRef(null);
+  useEffect(() => { active.current?.abort(); active.current = null; setAnswer(null); setError(""); setLoading(false); return () => { active.current?.abort(); active.current = null; }; }, [country]);
   async function ask(event) {
     event.preventDefault();
+    if (loading || !question.trim()) return;
+    const controller = new AbortController();
+    active.current = controller;
+    const timer = setTimeout(() => controller.abort(), 15000);
     setLoading(true);
     setError("");
     setAnswer(null);
     try {
       const response = await fetch("/api/reader/ask", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question: question.trim(), location: country }),
       });
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.detail || "Unable to answer right now.");
-      setAnswer(data);
+      if (!controller.signal.aborted) setAnswer({ ...data, country });
     } catch (err) {
-      setError(err.message);
+      if (active.current === controller) setError(err.name === "AbortError" ? "The request timed out. Please try again." : err.message);
     } finally {
-      setLoading(false);
+      clearTimeout(timer);
+      if (active.current === controller) setLoading(false);
     }
   }
   return (
-    <section className="rounded-xl border border-border bg-muted/40 p-4 mb-6">
-      <h2 className="text-2xl font-bold">{t("ask_ai_title", "Ask Aboki AI")}</h2>
-      <p className="text-sm my-2">
-        {t("ask_ai_desc", "Answers use stories stored in this news app.")}
+    <section className="ask-aboki" aria-labelledby="ask-aboki-heading">
+      <div className="ask-aboki-kicker"><Sparkles size={15} aria-hidden="true" /><span>Your reading companion</span></div>
+      <h2 id="ask-aboki-heading">{t("ask_ai_title", "Ask Aboki AI")}</h2>
+      <p className="ask-aboki-description">
+        {t("ask_ai_desc", "Explore the reporting. Ask a question. Follow the sources.")}
       </p>
+      <p className="ask-aboki-edition">{countryName(country, lang)} edition</p>
       <Button
         variant="link"
         className="px-0 mb-3 whitespace-normal text-left h-auto"
@@ -59,9 +73,9 @@ export default function AskVTAI() {
           placeholder={t("ask_ai_placeholder", "Ask a question")}
         />
         <Button
-          disabled={loading}
+          disabled={loading || !country}
           type="submit"
-          className="mt-2 min-w-24"
+          className="ask-aboki-submit mt-3 w-full"
           aria-busy={loading}
         >
           {loading
@@ -74,18 +88,19 @@ export default function AskVTAI() {
           {error}
         </p>
       )}
-      {answer && (
+      {answer && answer.country === country && (
         <div className="mt-3" role="status" aria-live="polite">
-          <p className="whitespace-pre-line">{answer.answer}</p>
-          <ul className="mt-3">
-            {answer.sources.map((source) => (
+          {(answer.kind === "general" || (!answer.kind && !answer.sources?.length)) && <p className="whitespace-pre-line">{answer.answer}</p>}
+          {answer.kind === "news" && !answer.sources?.length && <p>{answer.message || "No matching published stories were found."}</p>}
+          {answer.kind !== "general" && <ul className="mt-3" aria-label="News answers">
+            {(answer.sources || []).filter(source => /^\d+$/.test(String(source.id))).map((source) => (
               <li key={source.id}>
                 <Link className="underline text-sm" href={`/news/${source.id}`}>
-                  {source.title}
+                  {source.title}<ArrowUpRight size={12} aria-hidden="true" />
                 </Link>
               </li>
             ))}
-          </ul>
+          </ul>}
         </div>
       )}
     </section>

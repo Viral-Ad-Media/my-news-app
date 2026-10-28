@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 const story = {
   id: 1,
+  location: "ng",
   title: "A source-linked story for reader testing",
   description: "This is a browser-test fixture, not published news.",
   published_at: "2026-10-19T00:00:00Z",
@@ -10,6 +11,7 @@ const story = {
   image_url: null,
 };
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { localStorage.setItem("news-location", "ng"); });
   await page.route("http://news-api.test/api/**", (route) =>
     route.fulfill({
       json: {
@@ -83,7 +85,7 @@ test("mobile sheet traps focus, closes with Escape, and returns focus", async ({
     .getByRole("navigation", { name: "Mobile navigation" })
     .getByRole("link", { name: "Topics", exact: true })
     .click();
-  await expect(page).toHaveURL(/news\/custom/);
+  await expect(page).toHaveURL(/\/topics/);
   await expect(dialog).not.toBeVisible();
 });
 test("reduced motion removes drawer travel", async ({ page }) => {
@@ -203,7 +205,7 @@ test("login, forgot password, signup password toggle, and reader dashboard work 
     page.getByRole("heading", { name: "Regional & Local News Desks" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "United Kingdom & Europe" }),
+    page.getByRole("button", { name: "United Kingdom" }),
   ).toBeVisible();
 
   const themeBtn = page.getByRole("button", {

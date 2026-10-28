@@ -14,16 +14,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import useCountry from "../lib/use-country";
+import useCategories from "../lib/use-categories";
+import { categoryLinks } from "../lib/categories";
+import { articleMatchesCountry, countryName } from "../lib/countries";
 import { buildApiUrl, formatNewsDate, listItems } from "../lib/api";
 
-const REGIONAL_RSS_FEEDS = [
-  {
-    title: "All Global & Domestic Stories (Master Feed)",
-    path: "/rss.xml",
-    badge: "ALL",
-    description:
-      "Every published AbokiNews briefing and multi-perspective roundup.",
-  },
+const OTHER_REGIONAL_RSS_FEEDS = [
   {
     title: "Nigeria Regional Desk RSS",
     path: "/rss.xml?location=ng",
@@ -39,11 +36,11 @@ const REGIONAL_RSS_FEEDS = [
       "U.S. science, NASA exploration, elections, and national roundups.",
   },
   {
-    title: "United Kingdom & Europe Desk RSS",
+    title: "United Kingdom Desk RSS",
     path: "/rss.xml?location=gb",
     badge: "GB",
     description:
-      "UK Treasury, urban regeneration, European diplomacy, and international wire.",
+      "UK Treasury, urban regeneration, and national reporting.",
   },
 ];
 
@@ -64,23 +61,18 @@ const SPECTRUM_RSS_FEEDS = [
   },
 ];
 
-const TOPIC_FEEDS = [
-  "Business",
-  "Markets",
-  "Technology",
-  "Politics",
-  "Science",
-  "Health",
-  "Education",
-  "Housing",
-];
-
 export default function RssDirectory() {
+  const country = useCountry();
+  const { categories, error: categoriesError } = useCategories();
+  const topicFeeds = categoryLinks(categories).map(category => category.name);
+  const [copyError, setCopyError] = useState("");
+  const REGIONAL_RSS_FEEDS = [{ title: `${countryName(country)} edition RSS`, path: `/rss.xml?location=${country}`, badge: country.toUpperCase(), description: "Only stories from your selected country." }, ...OTHER_REGIONAL_RSS_FEEDS.filter(feed => feed.path.includes("location=") && !feed.path.endsWith(`=${country}`))];
   const [copiedPath, setCopiedPath] = useState("");
   const [previewArticles, setPreviewArticles] = useState([]);
 
   useEffect(() => {
-    const url = buildApiUrl("/news/?page_size=6");
+    if (!country) return;
+    const url = buildApiUrl(`/news/?page_size=6&location=${country}`);
     if (!url) return;
     const controller = new AbortController();
     fetch(url, { signal: controller.signal })
@@ -90,9 +82,10 @@ export default function RssDirectory() {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [country]);
 
   async function handleCopy(path) {
+    setCopyError("");
     const fullUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}${path}`
@@ -102,7 +95,8 @@ export default function RssDirectory() {
       setCopiedPath(path);
       setTimeout(() => setCopiedPath(""), 2000);
     } catch {
-      setCopiedPath(path);
+      setCopiedPath("");
+      setCopyError("Could not copy the feed address. Open its XML link and copy the address from your browser.");
     }
   }
 
@@ -123,6 +117,7 @@ export default function RssDirectory() {
         </p>
       </header>
 
+      {copyError && <p role="alert">{copyError}</p>}
       {/* Regional & Spectrum RSS Feeds */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-7 space-y-6 min-w-0">
@@ -261,7 +256,8 @@ export default function RssDirectory() {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {TOPIC_FEEDS.map((topic) => {
+              {categoriesError && <p role="alert">{categoriesError} The standard category feeds are still listed below.</p>}
+              {topicFeeds.map((topic) => {
                 const path = `/rss.xml?category=${encodeURIComponent(topic)}`;
                 return (
                   <div
@@ -295,7 +291,7 @@ export default function RssDirectory() {
                         asChild
                         className="h-7 px-2 text-xs"
                       >
-                        <a href={path} target="_blank" rel="noopener noreferrer">
+                        <a href={path} target="_blank" rel="noopener noreferrer" aria-label={`${topic} RSS XML`}>
                           XML
                         </a>
                       </Button>
@@ -315,7 +311,7 @@ export default function RssDirectory() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2.5">
-                {previewArticles.map((art) => (
+                {previewArticles.filter(article => articleMatchesCountry(article, country)).map((art) => (
                   <div
                     key={art.id}
                     className="rounded-lg border border-border bg-muted/20 p-3 space-y-1"

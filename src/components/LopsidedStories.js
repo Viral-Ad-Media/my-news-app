@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import NewsImage from "./NewsImage";
+import useCountry from "../lib/use-country";
+import { articleMatchesCountry, countryName } from "../lib/countries";
 import CoverageBar from "./CoverageBar";
 import {
   buildApiUrl,
@@ -40,9 +42,8 @@ const BIAS_FILTERS = [
 ];
 
 const REGION_FILTERS = [
-  { key: "all", label: "All Desks" },
-  { key: "allsides", label: "AllSides US & World" },
-  { key: "ng", label: "Nigeria Desk" },
+  { key: "all", label: "Selected country" },
+
 ];
 
 function PerspectiveColumn({ item, bucketKey, fallbackArticleId }) {
@@ -248,6 +249,7 @@ function RoundupArticleCard({ article, featured = false }) {
             {image && (
               <div className="md:col-span-4">
                 <NewsImage
+                    article={article}
                   src={image}
                   alt={article.title}
                   width={480}
@@ -329,6 +331,7 @@ function RoundupArticleCard({ article, featured = false }) {
 }
 
 export default function LopsidedStories({ mode = "widget" }) {
+  const country = useCountry();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -342,7 +345,8 @@ export default function LopsidedStories({ mode = "widget" }) {
     setLoading(true);
     setError("");
 
-    const url = buildApiUrl("/lopsided/?page_size=20");
+    if (!country) return () => controller.abort();
+    const url = buildApiUrl(`/lopsided/?page_size=20&location=${country}`);
     if (!url) {
       setError("The news service is not configured.");
       setLoading(false);
@@ -382,10 +386,11 @@ export default function LopsidedStories({ mode = "widget" }) {
       });
 
     return () => controller.abort();
-  }, [reload]);
+  }, [reload, country]);
 
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
+      if (!articleMatchesCountry(article, country)) return false;
       const cov = normalizeArticleCoverage(article);
 
       if (biasFilter === "lopsided" && !cov.isLopsided) return false;
@@ -422,7 +427,7 @@ export default function LopsidedStories({ mode = "widget" }) {
 
       return true;
     });
-  }, [articles, biasFilter, regionFilter, searchQuery]);
+  }, [articles, biasFilter, regionFilter, searchQuery, country]);
 
   const stats = useMemo(() => {
     let lopsidedCount = 0;
@@ -447,6 +452,7 @@ export default function LopsidedStories({ mode = "widget" }) {
     };
   }, [articles]);
 
+  if (!country) return <p className="py-6 text-sm text-muted-foreground">Choose a country to compare its reporting.</p>;
   if (loading) {
     return (
       <section
@@ -589,7 +595,7 @@ export default function LopsidedStories({ mode = "widget" }) {
               {stats.total}
             </p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              AllSides + Nigeria Desk
+              {countryName(country)} edition
             </p>
           </div>
           <div className="rounded-lg border border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 p-3.5">
@@ -651,7 +657,7 @@ export default function LopsidedStories({ mode = "widget" }) {
                     onClick={() => setRegionFilter(rf.key)}
                     className="h-8 text-xs"
                   >
-                    {rf.label}
+                    {rf.key === "all" ? countryName(country) : rf.label}
                   </Button>
                 );
               })}

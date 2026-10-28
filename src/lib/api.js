@@ -119,26 +119,46 @@ export function resolveApiAssetUrl(path = "") {
   return `${apiOrigin}${normalizedPath}`;
 }
 
+// Local licensed photographs are only illustrations, never evidence of a reported event.
+export function isPlaceholderImage(value) {
+  return /placeholder|feature1\.webp/i.test(String(value || "")) || /abokinews\/starter\/story-(?:2|1[1-9]|20)(?:\.[a-z0-9]+)?(?:$|[?#])/i.test(String(value || ""));
+}
+
+export function getArticleFallbackImage(article = {}) {
+  const text = `${article.title || ""} ${(article.categories || []).map((c) => c.name || c).join(" ")}`.toLowerCase();
+  const topics = [
+    ["refinery", /\b(refinery|petroleum|jet-fuel|jet fuel|aviation|oil|gas|fuel)\b/],
+    ["network", /\b(fiber|fibre|broadband|telecom|network|internet|data centre|data center)\b/],
+    ["clipper", /\b(europa|clipper)\b/],
+    ["space", /\b(nasa|space|webb|telescope|exoplanet|astronomy)\b/],
+    ["electricity", /\b(nerc|discos|meter|metering|grid|electricity)\b/],
+    ["finance", /\b(cbn|reserves|currency|foreign-exchange|inflation|loan|loans)\b/],
+    ["london", /\b(london|manchester|uk treasury|united kingdom)\b/],
+    ["energy", /\b(solar|energy|electricity|renewable|climate|power grid|environment)\b/],
+    ["health", /\b(health|hospital|medical|medicine|doctor|clinic|maternal|disease|vaccine)\b/],
+    ["sport", /\b(sport|sports|football|soccer|basketball|olympic|olympics|league|athlete|tennis)\b/],
+    ["education", /\b(education|school|university|student|students|campus|learning|teacher)\b/],
+    ["business", /\b(technology|tech|digital|software|startup|startups|ai|internet|fiber)\b/],
+    ["business", /\b(business|finance|financial|economy|economic|bank|banking|market|markets|stock|equities|trade|tax|revenue|budget|inflation|investment)\b/],
+    ["world", /\b(world|city|housing|transport|travel|international|infrastructure|urban)\b/],
+  ];
+  const topic = topics.find(([, pattern]) => pattern.test(text))?.[0] || "news";
+  return `/images/editorial/${topic}.webp`;
+}
+
+export function getArticleImageCandidates(article = {}) {
+  const titleKey = String(article.title || "").trim().toLowerCase();
+  return [...new Set([
+    article.image_url, article.remote_image_url, article.image,
+    article.og_image_url, CLOUDINARY_STORY_IMAGES_BY_TITLE[titleKey],
+  ].filter((value) => typeof value === "string")
+    .map(resolveApiAssetUrl)
+    .filter((value) => value && !isPlaceholderImage(value)))];
+}
+
 export function getArticleImageUrl(article) {
-  if (!article || typeof article !== "object") {
-    return "";
-  }
-
-  const direct = resolveApiAssetUrl(
-    article.image_url || article.remote_image_url || article.image || "",
-  );
-  if (direct) {
-    return direct;
-  }
-
-  const titleKey = String(article.title || "")
-    .trim()
-    .toLowerCase();
-  if (titleKey && CLOUDINARY_STORY_IMAGES_BY_TITLE[titleKey]) {
-    return CLOUDINARY_STORY_IMAGES_BY_TITLE[titleKey];
-  }
-
-  return "";
+  if (!article || typeof article !== "object") return "";
+  return getArticleImageCandidates(article)[0] || getArticleFallbackImage(article);
 }
 
 export function listItems(data) {
@@ -159,4 +179,11 @@ export function formatNewsDate(value) {
     year: "numeric",
     timeZone: "UTC",
   }).format(date);
+}
+
+export function withinPublicationWindow(article, window, now = Date.now()) {
+  const days = { last_day: 1, last_week: 7, last_month: 30 }[window];
+  if (!days) return true;
+  const published = Date.parse(article.published_at);
+  return Number.isFinite(published) && published <= now && published >= now - days * 86400000;
 }

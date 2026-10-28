@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Clock, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +21,12 @@ const BIAS_FILTERS = [
   { id: "lopsided", label: "Lopsided / Polarized" },
 ];
 
-export default function TimelinesPage() {
-  const [timeFilter, setTimeFilter] = useState("");
+function Timeline() {
+  const search = useSearchParams();
+  const [timeFilter, setTimeFilter] = useState(TIME_FILTERS.some(item => item.id === search.get("filter")) ? search.get("filter") : "");
   const [biasFilter, setBiasFilter] = useState("");
+  const linkedWindow = search.get("filter") || "";
+  useEffect(() => { setTimeFilter(TIME_FILTERS.some(item => item.id === linkedWindow) ? linkedWindow : ""); }, [linkedWindow]);
 
   const params = new URLSearchParams();
   if (timeFilter) params.set("filter", timeFilter);
@@ -112,3 +116,5 @@ export default function TimelinesPage() {
     </div>
   );
 }
+
+export default function TimelinesPage() { return <Suspense fallback={<p>Loading timeline…</p>}><Timeline /></Suspense>; }

@@ -52,8 +52,7 @@ export async function GET(request) {
     if (!backend.ok) return googleFailure(request, mode, backend.status === 503 ? "unavailable" : "failed");
     const session = await backend.json();
     if (!session.access || !session.refresh) return googleFailure(request, mode, "failed");
-    const user = session.user || {};
-    const destination = user.is_staff || user.is_superuser ? "/superadmin" : "/dashboard";
+    const destination = "/dashboard";
     const response = NextResponse.redirect(new URL(destination, googleCallbackUrl(request)));
     clearGoogleFlow(response);
     setSession(response, session, remember === "1");

@@ -1,5 +1,7 @@
 "use client";
 
+import useCountry from "../lib/use-country";
+import { articleMatchesCountry } from "../lib/countries";
 import useSavedStories from "../lib/use-saved-stories";
 import SaveStoryButton from "./SaveStoryButton";
 import CoverageBar from "./CoverageBar";
@@ -8,7 +10,8 @@ import Image from "./NewsImage";
 import { formatNewsDate, getArticleImageUrl } from "../lib/api";
 
 export default function RelatedNews({ articles }) {
-  const relatedArticles = Array.isArray(articles) ? articles : [];
+  const country = useCountry();
+  const relatedArticles = (Array.isArray(articles) ? articles : []).filter(article => articleMatchesCountry(article, country));
 
   const savedIds = useSavedStories(
     relatedArticles.map((article) => article.id),
@@ -45,6 +48,7 @@ export default function RelatedNews({ articles }) {
               {getArticleImageUrl(news) && (
                 <Link href={`/news/${news.id}`} className="block">
                   <Image
+                    article={news}
                     src={getArticleImageUrl(news)}
                     alt={news.title}
                     width={400}

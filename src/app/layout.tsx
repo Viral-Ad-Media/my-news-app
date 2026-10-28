@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import SiteChrome from "../components/SiteChrome";
 import InteractionPreferences from "../components/InteractionPreferences";
 
 const geistSans = localFont({
@@ -12,7 +11,7 @@ const geistSans = localFont({
 });
 export const metadata: Metadata = {
   title: "AbokiNews",
-  description: "AI Powered News App",
+  description: "News from your country. Read the story, follow the source.",
   alternates: {
     types: {
       "application/rss+xml": [
@@ -41,14 +40,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} antialiased`}>
         <div className="min-h-dvh flex flex-col overflow-x-clip">
           <InteractionPreferences />
-          <Header />
-
-          {/* Main Content */}
-          <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-            {children}
-          </main>
-
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </div>
       </body>
     </html>

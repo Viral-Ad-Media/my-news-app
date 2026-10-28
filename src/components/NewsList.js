@@ -6,13 +6,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   formatNewsDate,
-  buildApiUrl,
+  withinPublicationWindow,
   listItems,
   getArticleImageUrl,
 } from "../lib/api";
 import useSavedStories from "../lib/use-saved-stories";
 import NewsImage from "./NewsImage";
 import SaveStoryButton from "./SaveStoryButton";
+import useNewsStream from "../lib/use-news-stream";
+import useCountry from "../lib/use-country";
+import { articleMatchesCountry } from "../lib/countries";
 import CoverageBar from "./CoverageBar";
 
 export default function NewsList({
@@ -21,51 +24,23 @@ export default function NewsList({
   query = "",
   privateFeed = false,
   saved = false,
+  refreshMs = 0,
+  showCategories = false,
 }) {
+  const country = useCountry();
   const [page, setPage] = useState(1);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [reload, setReload] = useState(0);
-  useEffect(() => {
-    setPage(1);
-  }, [query, endpoint]);
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError("");
-    const params = new URLSearchParams(query);
-    params.set("page", page);
-    const url = privateFeed
-      ? `/api/reader${endpoint}?${params}`
-      : buildApiUrl(`${endpoint}?${params}`);
-    if (!url) {
-      setError("News service is not configured.");
-      setLoading(false);
-      return;
-    }
-    fetch(url, { signal: controller.signal })
-      .then(async (response) => {
-        if (response.status === 401)
-          throw new Error("Please login to view your feed.");
-        if (!response.ok) throw new Error("Unable to load stories.");
-        return response.json();
-      })
-      .then(setData)
-      .catch((err) => {
-        if (err.name !== "AbortError") setError(err.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [endpoint, query, page, privateFeed, reload]);
-  const articles = listItems(data);
+  const params = new URLSearchParams(query);
+  params.set("page", page);
+  const { data, error, loading, updatedAt, refresh } = useNewsStream({ endpoint, query: params.toString(), country, privateFeed, refreshMs });
+  useEffect(() => { setPage(1); }, [query, endpoint, country]);
+  const articles = listItems(data).filter(article => articleMatchesCountry(article, country) && withinPublicationWindow(article, params.get("filter")));
   const savedIds = useSavedStories(articles.map((article) => article.id));
   return (
-    <section className="my-6" aria-busy={loading}>
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-      {loading ? (
+    <section className="news-list my-6" aria-busy={loading}>
+      <h2 className="editorial-section-title text-2xl font-semibold mb-6">{title}</h2>
+      {refreshMs > 0 && <p className="stream-update" role="status">{updatedAt ? `Last checked ${new Date(updatedAt).toLocaleTimeString()}. ` : ""}Updates every {refreshMs / 1000} seconds while this tab is open.</p>}
+      {error && articles.length > 0 && <p role="alert" className="mb-4 text-sm">{error} <button type="button" className="underline" onClick={refresh}>Retry</button></p>}
+      {!country ? <p className="text-sm text-muted-foreground">Choose a country to see its stories.</p> : loading ? (
         <div
           role="status"
           aria-label="Loading stories"
@@ -81,14 +56,14 @@ export default function NewsList({
             </Card>
           ))}
         </div>
-      ) : error ? (
+      ) : error && !articles.length ? (
         <p role="alert">
           {error}{" "}
           <Button
             variant="outline"
             type="button"
             className="ml-2"
-            onClick={() => setReload((v) => v + 1)}
+            onClick={refresh}
           >
             Retry
           </Button>
@@ -105,13 +80,15 @@ export default function NewsList({
             {articles.map((article) => (
               <Card
                 key={article.id}
-                className="news-card bg-muted/50 border-0 shadow-none min-w-0"
+                className="news-card bg-transparent border-0 rounded-none shadow-none min-w-0"
               >
-                <CardContent className="p-4 h-full">
+                <CardContent className="p-0 h-full">
                   <article className="flex h-full flex-col min-w-0">
+                    {showCategories && <p className="stream-category">Category: {article.categories?.map(category => category.name).join(" · ") || "General news"}</p>}
                     <Link href={`/news/${article.id}`}>
                       {getArticleImageUrl(article) && (
                         <NewsImage
+                          article={article}
                           src={getArticleImageUrl(article)}
                           alt={article.title}
                           width={640}
@@ -123,7 +100,7 @@ export default function NewsList({
                         {article.title}
                       </h3>
                     </Link>
-                    <p className="text-sm sm:text-base my-3 leading-relaxed">
+                    <p className="text-sm my-3 leading-relaxed text-muted-foreground line-clamp-3">
                       {article.description}
                     </p>
                     <p className="text-xs text-muted-foreground mb-2">
@@ -146,7 +123,7 @@ export default function NewsList({
                       articleId={article.id}
                       initiallySaved={saved || savedIds.includes(article.id)}
                       onChange={() => {
-                        if (saved) setReload((value) => value + 1);
+                        if (saved) refresh();
                       }}
                     />
                   </article>

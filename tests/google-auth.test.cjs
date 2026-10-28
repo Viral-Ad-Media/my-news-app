@@ -108,3 +108,14 @@ test('rejected backend identity never sets reader cookies', async () => {
   assert.match(result.headers.get('location'), /google_error=failed/);
   assert.equal(result.cookies.get('news_access'), undefined);
 });
+
+test('Google sign-in sends staff to the reader dashboard without exposing admin navigation', async () => {
+  const f = fixture(); await f.begin();
+  f.respond([
+    { ok: true, json: async () => ({ access_token: 'google-access', id_token: 'google-identity' }) },
+    { ok: true, json: async () => ({ access: 'reader-access', refresh: 'reader-refresh', user: { username: 'developer', is_staff: true, is_superuser: true } }) },
+  ]);
+  const state = f.cookies.get(f.helper.GOOGLE_STATE_COOKIE);
+  const result = await f.callback.GET(new Request(`https://reader.test/api/auth/google/callback?state=${state}&code=code`));
+  assert.equal(result.headers.get('location'), 'https://reader.test/dashboard');
+});

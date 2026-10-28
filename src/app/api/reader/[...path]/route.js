@@ -11,6 +11,7 @@ async function proxy(request, { params }) {
   const allowed = {
     "saved-status": ["GET"],
     feed: ["GET"],
+    live: ["GET"],
     saved: ["GET"],
     preferences: ["GET", "PUT"],
     ask: ["POST"],

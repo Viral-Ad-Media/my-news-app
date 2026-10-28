@@ -83,7 +83,12 @@ export function articleStructuredData(article) {
     datePublished: article.published_at,
     mainEntityOfPage: seo.canonical,
     url: seo.url,
-    ...(article.author
+    ...(article.article_prepared
+      ? { author: { '@type': 'Organization', name: 'AbokiNews' },
+          ...(article.article_url ? { isBasedOn: article.article_url } : {}),
+          creditText: `Based on source reporting from ${article.source?.name || 'the attributed publisher'}${article.author ? ` by ${article.author}` : ''}.`,
+        }
+      : article.author
       ? {
           author: {
             "@type": /desk|news|editorial/i.test(article.author)

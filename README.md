@@ -202,3 +202,84 @@ Both account pages offer Google sign-in through a server-side authorization code
 4. Set `GOOGLE_REDIRECT_URI` on the frontend to the matching callback URL. Restart local servers or redeploy both projects.
 
 Django exposes `POST /api/auth/google/` using its existing allauth tables; no new model migrations are needed. Existing migrations must already be applied. Configure the Google provider through environment variables as above rather than creating a duplicate Google SocialApp in Django admin. Existing password accounts are not automatically linked just because the email matches. A missing configuration or cancelled flow returns to the account page with an explanatory message.
+
+
+## Automatic news publishing
+
+The n8n JSON files are references for related improvements, not a literal publishing policy. Crawled news keeps its existing structure and publishes immediately. There is no draft state, review queue, approval checkbox, keyword-density gate, or mandatory long-form article structure.
+
+Django prepares missing search/social previews automatically from the original headline and summary. Provider updates refresh automatically derived previews while custom metadata remains intact. Source content, author, article URL and publication time are preserved. Existing reader pages, numeric `/news/<id>` URLs and feeds continue working.
+
+The public `/sitemap.xml` includes indexable articles and is advertised in `/robots.txt`. Set backend `PUBLISHING_SITE_URL` to the frontend `NEXT_PUBLIC_SITE_URL` origin. Migration `0016_automatic_news_publishing` removes the earlier draft/approval implementation, restores the previous article schema, and prepares metadata for existing records. Run the complete migration chain before rollout if the earlier migrations have already been applied.
+
+No paid AI calls, article padding, generated author biographies, guessed facts, or manual approvals are part of this flow. Details are in the companion backend's `docs/publishing-workflow.md`.
+
+### Editorial layout and article photography
+
+The homepage uses a photo-led lead story, supporting headlines, feature tiles, and an article grid. Search, topics, accounts, saved stories, the personal feed, and coverage comparisons remain available on desktop and mobile.
+
+Article images try the API image, crawled remote image, uploaded image, social image, and existing story-specific image, then a local topic photograph. Broken images advance through those candidates automatically. Local fallbacks are labelled **Illustrative photo** so readers can distinguish them from source reporting. They never delay publication or change article records. Subjects without a specific match use the general reporting photograph. See [photograph sources and license](public/images/editorial/CREDITS.md); add new subject photos and mappings in `src/lib/api.js` as coverage expands.
+
+### Country editions and languages
+
+The country dropdown offers 61 editions. A saved choice takes precedence; first-time visitors use Vercel's country header, with browser timezone/locale as a fallback. When detection cannot identify a supported country, readers choose one explicitly. The selected country updates the homepage wording and is sent to headlines, comparisons, search, timelines, personal and saved feeds, RSS previews, category counts, recaps, and Ask Aboki AI. Country matching uses complete country tokens and aliases; UK no longer includes the world desk. Countries with no collected reporting show an empty edition instead of another country's stories. The API must be updated alongside the frontend for server filtering and regional AI answers.
+
+The language dropdown offers 21 languages, with translated core navigation and RTL support for Arabic, Urdu and Persian. Secondary interface strings fall back to English where a translation is missing. Article translation uses the browser's translation engine when available; unavailable translations retain the original report and explain the limitation.
+
+Legacy generated starter cards (`story-11` through `story-20`) and the `story-2` chart are excluded even when stored in an API image field. Source photographs such as `story-4` remain eligible. Added locally stored refinery, data-centre, transmission-line, finance, London, Earth and Europa Clipper photographs provide relevant labelled illustrations when an original source photograph is unavailable. See the image credits above.
+
+### Current topics, categories, and the member live desk
+
+**Topics** in the main navigation opens `/topics`, which shows current published headlines and source tags with an explicit category on every story. It refreshes every 30 seconds while the tab is visible. Topic preferences remain available at `/news/custom` through “Manage followed categories.”
+
+The sidebar now has one **Explore categories** section, including Sports, Culture, Arts, Finance, Games, Entertainment, and other desks. Categories without reporting in the selected country show an empty edition. The coverage/framing section follows Latest briefing, and Latest News spans the content width below it.
+
+**Live**, beside RSS, opens `/live`. Guests see an account sign-in panel. Members receive the country-filtered `/api/reader/live/` feed across all categories, regardless of followed-topic preferences, with an optional category filter. Django enforces authentication on `/api/live/`; the frontend proxy forwards the session without exposing tokens. Updates poll for new published stories every 30 seconds, pause in hidden tabs, and resume when the tab becomes visible. “Live” means automatically refreshed published reporting, not a video broadcast or an additional crawler. Existing ingestion schedules determine when new reporting becomes available.
+
+## Private admin panel
+
+Visit `/admin/login` with a Django staff/superuser account provisioned on the
+backend using `python manage.py createsuperuser`. There is no public admin signup.
+The six sections are `/admin`, `/admin/articles`, `/admin/categories`,
+`/admin/sources`, `/admin/logs`, `/admin/settings`. They use the existing HttpOnly
+reader session and a server-authorized `/api/admin/*` proxy. Staff may manage
+content and automation; permanent deletion and role changes require superuser.
+
+Set server-only `API_SERVER_URL` to the backend origin ending in `/api`; keep
+`NEXT_PUBLIC_API_BASE_URL` pointed at its public API. Secure cookies require HTTPS
+in production. The public site keeps its existing layout; admin pages have their
+own navigation and use the same color variables. No public navigation link was
+added. Existing `/superadmin` editorial functionality remains available.
+
+Backend migrations and a separately deployed worker are required for automation.
+See the companion `newsapp-server/docs/admin-panel.md` for the full operational
+runbook and change manifest. No production migrations or deployment were run.
+
+The new browser suite runs against a fresh temporary SQLite Django database, with
+explicit test-only accounts. It never uses the configured `.env` database:
+
+```bash
+CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npx playwright test --config playwright.admin.config.ts
+```
+
+The sibling backend and workspace `.venv` must be present. Run this separately
+from other Next development servers in this checkout; they share `.next`.
+
+## Updated reader experience
+
+`/topics` is the shared category browser and subscription editor; all old
+`/news/custom` links redirect there. My Feed, sidebar categories, dashboard and
+footer links use the same interface. Category selection is in the URL and marked
+orange. Timelines and Briefing Recap use strict publication-time windows; empty
+windows stay empty. Briefing Recap is beneath Ask Aboki AI in the sidebar.
+
+Ask Aboki shows stored-news answers as article links and general questions as
+plain text. Set backend `OPENAI_API_KEY` for general answers; news retrieval works
+without it. General answers cannot guarantee correctness or access live facts.
+
+Email recovery uses `/forgot-password` and `/reset-password/<uid>/<token>`, through
+a same-origin server proxy. Configure backend SMTP and a trusted
+`PASSWORD_RESET_FRONTEND_URL`; see `newsapp-server/docs/reader-experience.md`.
+Tokens expire after one hour and are single use. Password changes revoke existing
+JWT access and refresh tokens. Deploying this token check requires existing
+readers to sign in again. No account passwords or API keys belong in frontend env.

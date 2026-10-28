@@ -91,11 +91,7 @@ export default function Login({
       } catch {}
       window.dispatchEvent(new Event("news-session"));
       onComplete?.();
-      if (data?.is_superuser || data?.is_staff) {
-        router.push("/superadmin");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     } catch {
       setError("Unable to sign in right now. Please try again.");
     } finally {

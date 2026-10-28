@@ -1,0 +1,20 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const ts = require('typescript');
+const api = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/api.js','utf8'), {compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText, {exports:api,process:{env:{}}});
+test('publication windows reject old, future and invalid dates and retain exact cutoff', () => {
+ const now = Date.parse('2026-10-27T12:00:00Z');
+ const story = age => ({published_at:new Date(now-age*3600000).toISOString()});
+ assert.equal(api.withinPublicationWindow(story(23),'last_day',now),true);
+ assert.equal(api.withinPublicationWindow(story(24),'last_day',now),true);
+ assert.equal(api.withinPublicationWindow(story(24.001),'last_day',now),false);
+ assert.equal(api.withinPublicationWindow(story(-1),'last_day',now),false);
+ assert.equal(api.withinPublicationWindow({published_at:'bad'},'last_day',now),false);
+ assert.equal(api.withinPublicationWindow(story(7*24),'last_week',now),true);
+ assert.equal(api.withinPublicationWindow(story(7*24+1),'last_week',now),false);
+ assert.equal(api.withinPublicationWindow(story(30*24+1),'last_month',now),false);
+ assert.equal(api.withinPublicationWindow(story(400*24),'',now),true);
+});

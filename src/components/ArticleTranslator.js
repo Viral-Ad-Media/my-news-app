@@ -13,33 +13,6 @@ import {
 } from "@/components/ui/select";
 import { SUPPORTED_LANGUAGES, useLanguage } from "../lib/i18n";
 
-const PHRASE_FALLBACK_HEADERS = {
-  fr: {
-    prefix: "Traduction française",
-    note: "Résumé éditorial traduit en français :",
-  },
-  es: {
-    prefix: "Traducción al español",
-    note: "Resumen editorial traducido al español:",
-  },
-  ha: {
-    prefix: "Fassarar Hausa",
-    note: "Takaitaccen bayanin labari a harshen Hausa:",
-  },
-  yo: {
-    prefix: "Ìtumọ̀ Yorùbá",
-    note: "Àkótán ìròyìn ní èdè Yorùbá:",
-  },
-  ig: {
-    prefix: "Ntụgharị Igbo",
-    note: "Nchịkọta akụkọ n’asụsụ Igbo:",
-  },
-  ar: {
-    prefix: "الترجمة العربية",
-    note: "ملخص التقرير مترجم إلى العربية:",
-  },
-};
-
 export default function ArticleTranslator({
   title = "",
   description = "",
@@ -117,53 +90,8 @@ export default function ArticleTranslator({
         }
       }
 
-      // 2. Fallback strategy: query /api/reader/ask or local multi-language synthesis
-      const targetMeta =
-        SUPPORTED_LANGUAGES.find((l) => l.code === targetLang) ||
-        SUPPORTED_LANGUAGES[1];
-      const fallbackMeta = PHRASE_FALLBACK_HEADERS[targetLang] || {
-        prefix: targetMeta.nativeLabel,
-        note: `Translated for ${targetMeta.nativeLabel} readers:`,
-      };
-
-      let aiTranslatedText = "";
-      try {
-        const res = await fetch("/api/reader/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: `Translate this headline and summary into ${targetMeta.label} (${targetMeta.nativeLabel}): ${title}. ${description}`,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (
-            data?.answer &&
-            !String(data.answer).includes("currently unavailable")
-          ) {
-            aiTranslatedText = data.answer;
-          }
-        }
-      } catch {
-        // Fallback below if offline or unconfigured
-      }
-
-      setTranslated({
-        lang: targetLang,
-        title: `[${fallbackMeta.prefix}] ${title}`,
-        description:
-          aiTranslatedText || `${fallbackMeta.note} ${description}`,
-        paragraphs: paragraphs.map((p, idx) =>
-          idx === 0 && aiTranslatedText
-            ? aiTranslatedText
-            : `${p}`,
-        ),
-      });
-      setEngineLabel(
-        aiTranslatedText
-          ? "AbokiNews Cloud Translation Fallback"
-          : `${targetMeta.nativeLabel} Reader Edition (Client-side Translator API unavailable in this browser)`,
-      );
+      setTranslated(null);
+      setStatusMessage("Translation for this language is unavailable in this browser. The original reporting is shown below.");
     } catch {
       setStatusMessage(
         "Client-side translation is currently unsupported in this browser.",

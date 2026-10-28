@@ -26,7 +26,7 @@ export default function Footer() {
             {t("nav_saved", "Saved Stories")}
           </Link>
           <Link
-            href="/news/custom"
+            href="/topics?manage=1#followed-categories"
             className="hover:text-foreground hover:underline"
           >
             {t("choose_topics", "Choose Topics")}

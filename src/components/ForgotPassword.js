@@ -19,7 +19,6 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { buildApiUrl } from "../lib/api";
 
 export default function ForgotPassword() {
   const [identifier, setIdentifier] = useState("");
@@ -30,6 +29,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (loading) return;
     setError("");
 
     const trimmed = identifier.trim();
@@ -40,7 +40,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const resetUrl = buildApiUrl("/password-reset/");
+      const resetUrl = "/api/account/reset-request";
       if (resetUrl) {
         const res = await fetch(resetUrl, {
           method: "POST",
@@ -58,10 +58,6 @@ export default function ForgotPassword() {
         setStatusMessage(
           data?.detail ||
             "If an account matches that username or email, password recovery instructions have been sent.",
-        );
-      } else {
-        setStatusMessage(
-          "If an account matches that username or email, password recovery instructions have been sent.",
         );
       }
       setSubmitted(true);
@@ -141,6 +137,7 @@ export default function ForgotPassword() {
                   />
                   <Input
                     type="text"
+                    maxLength={254}
                     id="recovery-identifier"
                     name="identifier"
                     value={identifier}

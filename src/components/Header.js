@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Languages, Menu, Search } from "lucide-react";
+import { Languages, Menu, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ThemeToggle from "./ThemeToggle";
 import AuthDialog from "./AuthDialog";
+import useCountry, { selectCountry } from "../lib/use-country";
+import { COUNTRIES, countryName } from "../lib/countries";
 import { SUPPORTED_LANGUAGES, useLanguage } from "../lib/i18n";
 import {
   Sheet,
@@ -29,7 +31,7 @@ import {
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [location, setLocation] = useState("ng");
+  const location = useCountry();
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
   const pathname = usePathname();
@@ -39,15 +41,15 @@ export default function Header() {
     [t("nav_home", "Home"), "/"],
     [t("nav_feed", "My Feed"), "/feed"],
     [t("nav_saved", "Saved News"), "/news/saved"],
-    [t("nav_topics", "Topics"), "/news/custom"],
+    [t("nav_topics", "Topics"), "/topics"],
     [t("nav_local", "Local News"), "/local-news"],
     [t("nav_timelines", "Timelines"), "/timelines"],
     [t("nav_lopsided", "Lopsided"), "/lopsided"],
     ["RSS", "/rss"],
+    ["Live", "/live"],
   ];
 
   useEffect(() => {
-    setLocation(localStorage.getItem("news-location") || "ng");
     const update = () =>
       fetch("/api/session")
         .then((res) => (res.ok ? res.json() : null))
@@ -98,13 +100,13 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b bg-background">
-      <div className="w-full max-w-[1600px] mx-auto px-4 py-3.5 sm:px-6 sm:py-4 lg:px-8">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+    <header className="editorial-header border-b bg-background">
+      <div className="header-inner w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10">
+        <div className="header-main flex items-center gap-2 sm:gap-3 flex-wrap">
           <Link
             href="/"
             aria-label="AbokiNews home"
-            className="mr-auto shrink-0"
+            className="masthead-brand mr-auto shrink-0"
           >
             <Image
               src="/images/logo.png"
@@ -112,32 +114,21 @@ export default function Header() {
               height={93}
               alt="AbokiNews"
               priority
-              className="dark:invert w-24 sm:w-[120px] h-auto"
+              className="invert w-28 sm:w-[144px] h-auto"
             />
           </Link>
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+          <div className="masthead-account flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
             <ThemeToggle />
             {user ? (
               <>
-                {(user.is_superuser || user.is_staff) && (
-                  <Button
-                    variant={
-                      pathname === "/superadmin" ? "default" : "secondary"
-                    }
-                    size="sm"
-                    asChild
-                    className="px-2.5 sm:px-3"
-                  >
-                    <Link href="/superadmin">Superadmin</Link>
-                  </Button>
-                )}
                 <Button
                   variant={pathname === "/dashboard" ? "secondary" : "outline"}
                   size="sm"
                   asChild
-                  className="px-2.5 sm:px-3"
+                  className="masthead-dashboard px-2.5 sm:px-3"
                 >
-                  <Link href="/dashboard">
+                  <Link href="/dashboard" aria-label={t("nav_dashboard", "Dashboard")} aria-current={pathname === "/dashboard" ? "page" : undefined}>
+                    <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{t("nav_dashboard", "Dashboard")}</span>
                     <span className="hidden sm:inline text-muted-foreground max-w-28 truncate">
                       · {user.username}
@@ -158,10 +149,10 @@ export default function Header() {
               </>
             ) : (
               <>
-                <AuthDialog initialMode="login">
+                <AuthDialog initialMode="login" className="masthead-login">
                   {t("nav_login", "Login")}
                 </AuthDialog>
-                <AuthDialog initialMode="signup">
+                <AuthDialog initialMode="signup" className="masthead-signup">
                   {t("nav_signup", "Sign Up")}
                 </AuthDialog>
               </>
@@ -196,7 +187,7 @@ export default function Header() {
               </SheetContent>
             </Sheet>
           </div>
-          <div className="w-full flex flex-col gap-2.5 sm:flex-row sm:items-center pt-2">
+          <div className="header-utility w-full flex flex-col gap-2.5 sm:flex-row sm:items-center">
             <form
               action="/search"
               className="flex flex-1 gap-2 min-w-0"
@@ -235,28 +226,16 @@ export default function Header() {
                 </Label>
                 <Select
                   value={location}
-                  onValueChange={(value) => {
-                    setLocation(value);
-                    localStorage.setItem("news-location", value);
-                    window.dispatchEvent(new Event("news-location"));
-                  }}
+                  onValueChange={selectCountry}
                 >
                   <SelectTrigger
                     id="news-country"
                     className="w-full sm:w-40 min-w-0"
                   >
-                    <SelectValue />
+                    <SelectValue placeholder="Choose country" />
                   </SelectTrigger>
                   <SelectContent className="news-select">
-                    <SelectItem value="ng">
-                      {t("country_ng", "Nigeria")}
-                    </SelectItem>
-                    <SelectItem value="us">
-                      {t("country_us", "United States")}
-                    </SelectItem>
-                    <SelectItem value="gb">
-                      {t("country_gb", "United Kingdom")}
-                    </SelectItem>
+                    {COUNTRIES.map(country => <SelectItem key={country.code} value={country.code}>{countryName(country.code, lang)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -293,7 +272,7 @@ export default function Header() {
         </div>
         <nav
           aria-label="Main navigation"
-          className="hidden lg:flex flex flex-wrap gap-1 mt-3"
+          className="editorial-nav hidden lg:flex flex-wrap gap-1"
         >
           {navigation()}
         </nav>

@@ -1,67 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useCountry, { selectCountry } from "../lib/use-country";
+import { COUNTRIES, countryName } from "../lib/countries";
 import { Globe2, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import NewsList from "./NewsList";
 
-const REGIONAL_DESKS = [
-  {
-    code: "ng",
-    label: "Nigeria",
-    badge: "NG",
-    description:
-      "Abuja, Lagos, and nationwide Nigerian economy, energy, governance, and sports coverage.",
-  },
-  {
-    code: "us",
-    label: "United States",
-    badge: "US",
-    description:
-      "Washington policy, Federal Reserve, US markets, technology, and national roundups.",
-  },
-  {
-    code: "gb",
-    label: "United Kingdom & Europe",
-    badge: "GB",
-    description:
-      "UK, European, and international wire dispatches across economy, climate, and diplomacy.",
-  },
-  {
-    code: "",
-    label: "All Global Desks",
-    badge: "ALL",
-    description:
-      "Combined domestic and international newsroom wire across all regions.",
-  },
-];
-
 export default function LocalNews() {
-  const [location, setLocation] = useState("ng");
-
-  useEffect(() => {
-    const update = () =>
-      setLocation(localStorage.getItem("news-location") ?? "ng");
-    update();
-    window.addEventListener("news-location", update);
-    window.addEventListener("storage", update);
-    return () => {
-      window.removeEventListener("news-location", update);
-      window.removeEventListener("storage", update);
-    };
-  }, []);
-
-  function selectDesk(code) {
-    setLocation(code);
-    if (code) {
-      localStorage.setItem("news-location", code);
-      window.dispatchEvent(new Event("news-location"));
-    }
-  }
-
-  const activeDesk =
-    REGIONAL_DESKS.find((d) => d.code === location) || REGIONAL_DESKS[0];
+  const location = useCountry();
+  const activeDesk = { label: countryName(location), description: `Reporting from ${countryName(location)}. Other countries are excluded from this edition.` };
+  const REGIONAL_DESKS = COUNTRIES.filter(country => ["ng", "us", "gb", location].includes(country.code)).map(country => ({ ...country, label: country.name }));
+  const selectDesk = selectCountry;
 
   return (
     <div className="space-y-6">

@@ -38,8 +38,8 @@ export default function SeoEditor({ value, onChange }) {
         if (!res.ok)
           throw new Error(
             res.status === 404
-              ? "Draft checks are unavailable right now. You can still save this post."
-              : "Could not check this draft. Your changes are still in the form.",
+              ? "Metadata checks are unavailable right now. Publishing is still available."
+              : "Could not check metadata. Your changes are still in the form.",
           );
         setAnalysis(await res.json());
       } catch (err) {
@@ -73,7 +73,7 @@ export default function SeoEditor({ value, onChange }) {
             Search &amp; sharing
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Give this story a clear search result.
+            Crawled news publishes automatically with prepared metadata. These optional checks do not hold publication.
           </p>
         </div>
         <div role="status" aria-live="polite" className="text-right shrink-0">
@@ -81,7 +81,7 @@ export default function SeoEditor({ value, onChange }) {
             {busy ? "—" : analysis ? `${analysis.score}/100` : "—"}
           </p>
           <p className="text-xs text-muted-foreground">
-            {busy ? "Checking draft…" : "Editorial SEO"}
+            {busy ? "Checking metadata…" : "Editorial SEO"}
           </p>
         </div>
       </div>
@@ -288,7 +288,7 @@ export default function SeoEditor({ value, onChange }) {
         )}
         {!value.title.trim() && (
           <p className="text-sm text-muted-foreground">
-            Add a headline to start the draft checks.
+            Add a headline to see optional metadata checks.
           </p>
         )}
         {analysis && (
@@ -327,8 +327,8 @@ export default function SeoEditor({ value, onChange }) {
             </ul>
             {onlyIssues && !pending.length && (
               <p className="text-sm">
-                All configured checks pass. Review accuracy and usefulness
-                before publishing.
+                Metadata checks are complete. These suggestions do not hold
+                news publication.
               </p>
             )}
           </>
