@@ -19,7 +19,6 @@ export default function CurrentTopics() {
   const category = params.get("category") || "";
   const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const items = categoryLinks(categories);
-  if (category && !items.some(item => item.name.toLowerCase() === category.toLowerCase())) items.push({ name: category, href: `/topics?category=${encodeURIComponent(category)}` });
   const manage = params.get("manage") === "1";
   const [managing, setManaging] = useState(manage);
   useEffect(() => setManaging(manage), [manage]);

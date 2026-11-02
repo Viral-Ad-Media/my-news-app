@@ -6,16 +6,13 @@ test.beforeEach(async ({page}) => {
   await page.route('**/api/reader/**',route=>route.fulfill({json:{results:[],count:0,categories:[],saved_ids:[]}}));
 });
 
-test('all topic RSS links include standard and additional saved categories',async({page,request})=>{
+test('RSS is absent from public navigation and anonymous bookmarks require admin login',async({page,request})=>{
   await page.route('**/api/session',route=>route.fulfill({json:{authenticated:false}}));
+  await page.goto('/');
+  await expect(page.locator('a[href="/rss"],a[href="/rss.xml"],link[type="application/rss+xml"]')).toHaveCount(0);
   await page.goto('/rss');
-  for(const name of ['Sports','Culture','Arts','Finance','Games','Entertainment','Business','Politics','Technology','Science','Health','Education','Environment','Travel','Food','Lifestyle','World','Housing','Markets']) {
-    await expect(page.getByRole('link',{name:`${name} RSS XML`,exact:true})).toHaveAttribute('href',`/rss.xml?category=${encodeURIComponent(name)}`);
-  }
-  const xml=await request.get('/rss.xml?category=Entertainment');
-  expect(xml.status()).toBe(200);
-  expect(xml.headers()['content-type']).toContain('application/rss+xml');
-  expect(await xml.text()).toContain('Entertainment RSS Feed');
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  expect((await request.get('/rss.xml')).status()).toBe(401);
 });
 
 test('signed-in staff see a prominent person-and-dashboard link, with no reader-facing admin controls',async({page})=>{

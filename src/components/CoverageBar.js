@@ -23,20 +23,10 @@ export default function CoverageBar({
       ? sources
       : normalized.totalSources;
 
-  const hasBreakdown =
-    article ||
-    typeof left === "number" ||
-    typeof center === "number" ||
-    typeof right === "number";
-
-  if (!hasBreakdown) {
-    return (
-      <p className="mt-2 text-xs text-muted-foreground">
-        {Number.isInteger(sources) && sources > 0
-          ? `${sources} reported source${sources === 1 ? "" : "s"}`
-          : "Source coverage unavailable"}
-      </p>
-    );
+  // Legacy percentages have no recorded methodology. Do not present them as
+  // measured political bias, or repeat an unverified stored source count.
+  if (!article?.coverage_verified) {
+    return <p className="text-xs text-muted-foreground">Bias unrated · {article?.developing_story ? "Compare linked reports on the event page." : "See the attributed source report."}</p>;
   }
 
   const { left: lPct, center: cPct, right: rPct, dominantMeta } = normalized;

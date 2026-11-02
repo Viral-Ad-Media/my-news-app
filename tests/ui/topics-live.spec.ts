@@ -6,14 +6,15 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/reader/saved-status**", route => route.fulfill({ json: { saved_ids: [] } }));
   await page.route("**/api/session", route => route.fulfill({ json: { authenticated: false } }));
 });
-test("homepage has one category explorer, coverage before full-width latest news", async ({ page }) => {
+test("homepage has one category explorer, developing stories before full-width latest news", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Explore categories", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Explore topics", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "More to explore", exact: true })).toHaveCount(0);
-  for (const name of ["Sports", "Culture", "Arts", "Finance", "Games", "Entertainment"]) await expect(page.locator(".explore-categories").getByRole("link", { name, exact: true })).toBeVisible();
-  const coverage = page.getByRole("heading", { name: "Side-by-Side & Lopsided Stories" });
+  await expect(page.locator(".explore-categories").getByRole("link", { name: "Sports", exact: true })).toBeVisible();
+  await expect(page.locator(".explore-categories").getByRole("link", { name: "Culture", exact: true })).toHaveCount(0);
+  const coverage = page.getByRole("heading", { name: "Follow the developments" });
   const latest = page.locator(".news-list").filter({ has: page.getByRole("heading", { name: "Latest News", exact: true }) });
   await expect(coverage).toBeVisible();
   const brief = page.getByRole("region", { name: "Latest briefing" });
@@ -22,9 +23,10 @@ test("homepage has one category explorer, coverage before full-width latest news
   const main = await page.locator("main").boundingBox();
   expect((await latest.boundingBox())!.width).toBeGreaterThan(main!.width * .9);
   await page.screenshot({ path: "test-results/homepage-categories-desktop.png", fullPage: true });
-  await page.locator(".explore-categories").getByRole("link", { name: "Culture", exact: true }).click();
-  await expect(page).toHaveURL(/topics\?category=Culture/);
-  await expect(page.getByRole("navigation", { name: "News categories" }).getByRole("link", { name: "Culture", exact: true })).toBeVisible();
+  await page.route("http://news-api.test/api/categories/8/", route => route.fulfill({ json: { id: 8, name: "Sports", article_count: 1 } }));
+  await page.locator(".explore-categories").getByRole("link", { name: "Sports", exact: true }).click();
+  await expect(page).toHaveURL(/categories\/8$/);
+  await expect(page.getByRole("heading", { name: "Sports", exact: true, level: 1 })).toBeVisible();
 });
 test("Topics navigation opens current subjects with categories and refreshes", async ({ page }) => {
   await page.clock.install();
@@ -51,11 +53,13 @@ test("guest Live page requires an account without requesting the live feed", asy
   await expect(page.getByRole("heading", { name: "Sign in to follow the live desk." })).toBeVisible();
   expect(requests).toBe(0);
   const links = await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link").allTextContents();
-  expect(links.indexOf("Live")).toBe(links.indexOf("RSS") + 1);
+  expect(links).toContain("Live");
+  expect(links).not.toContain("RSS");
   await page.locator(".live-account-gate").getByRole("button", { name: "Login", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
 test("member Live feed refreshes across categories and respects the selected country", async ({ page }) => {
+  await page.route("http://news-api.test/api/categories/**", route => route.fulfill({ json: { results: [...story.categories, { id: 9, name: "Entertainment" }, { id: 10, name: "Games" }], count: 3 } }));
   await page.clock.install();
   await page.route("**/api/session", route => route.fulfill({ json: { authenticated: true, username: "Test member" } }));
   let calls = 0;

@@ -1,5 +1,18 @@
 # AbokiNews Frontend
 
+## Editorial and reader upgrade (November 2, 2026)
+
+New routes: `/stories`, `/stories/[id]`, `/sources`, `/sources/[id]`,
+`/feed/preferences`, `/history`, `/editorial-policy`, `/admin/editorial`, and
+`/admin/coverage`. Homepage curation, article context/corrections, publisher/event
+following, muted sources, reading controls and optional history use the existing
+Next.js/Django session architecture. No new package dependencies were added.
+
+Deploy the backend with migration 0021 (and its 0020 dependency) before this
+frontend. Editors populate events, placements and source reviews; no content is
+invented for empty states. Email delivery configuration remains deferred.
+Operational guide: companion backend `docs/editorial-reader-upgrade.md`.
+
 Next.js application for reading news, searching stories, selecting topics, viewing a personal feed, saving articles, and asking questions about stored news. Source coverage reflects backend data; political-bias comparisons remain unavailable until verified classification data is integrated.
 
 Companion API: [Viral-Ad-Media/newsapp-server](https://github.com/Viral-Ad-Media/newsapp-server).
@@ -234,14 +247,14 @@ Legacy generated starter cards (`story-11` through `story-20`) and the `story-2`
 
 The sidebar now has one **Explore categories** section, including Sports, Culture, Arts, Finance, Games, Entertainment, and other desks. Categories without reporting in the selected country show an empty edition. The coverage/framing section follows Latest briefing, and Latest News spans the content width below it.
 
-**Live**, beside RSS, opens `/live`. Guests see an account sign-in panel. Members receive the country-filtered `/api/reader/live/` feed across all categories, regardless of followed-topic preferences, with an optional category filter. Django enforces authentication on `/api/live/`; the frontend proxy forwards the session without exposing tokens. Updates poll for new published stories every 30 seconds, pause in hidden tabs, and resume when the tab becomes visible. “Live” means automatically refreshed published reporting, not a video broadcast or an additional crawler. Existing ingestion schedules determine when new reporting becomes available.
+**Live** opens `/live`. Guests see an account sign-in panel. Members receive the country-filtered `/api/reader/live/` feed across all categories, regardless of followed-topic preferences, with an optional category filter. Django enforces authentication on `/api/live/`; the frontend proxy forwards the session without exposing tokens. Updates poll for new published stories every 30 seconds, pause in hidden tabs, and resume when the tab becomes visible. “Live” means automatically refreshed published reporting, not a video broadcast or an additional crawler. Existing ingestion schedules determine when new reporting becomes available.
 
 ## Private admin panel
 
 Visit `/admin/login` with a Django staff/superuser account provisioned on the
 backend using `python manage.py createsuperuser`. There is no public admin signup.
-The six sections are `/admin`, `/admin/articles`, `/admin/categories`,
-`/admin/sources`, `/admin/logs`, `/admin/settings`. They use the existing HttpOnly
+The seven sections are `/admin`, `/admin/articles`, `/admin/categories`,
+`/admin/sources`, `/admin/rss`, `/admin/logs`, `/admin/settings`. They use the existing HttpOnly
 reader session and a server-authorized `/api/admin/*` proxy. Staff may manage
 content and automation; permanent deletion and role changes require superuser.
 
@@ -254,6 +267,24 @@ added. Existing `/superadmin` editorial functionality remains available.
 Backend migrations and a separately deployed worker are required for automation.
 See the companion `newsapp-server/docs/admin-panel.md` for the full operational
 runbook and change manifest. No production migrations or deployment were run.
+
+Settings now has a dedicated responsive publishing control page, with an orange
+on/white off automation switch. Configure intervals of 1–1000 minutes and publish
+limits of 1–100 new stories per source per interval. Add multiple source/category
+rules to choose exactly which feeds participate; with no rules, enabled sources
+use the default limit. The backend enforces category matching and durable quotas,
+and continues larger targets in bounded worker batches. Apply backend migration
+`0020_publishing_limits` before using these controls with the updated worker.
+
+RSS links and autodiscovery have been removed from the public site. The directory
+is staff-only at `/admin/rss`, with country/topic coverage counts from the backend.
+XML at `/admin/rss.xml` and the legacy `/rss.xml` checks staff access on every
+request; Django `/api/rss/` enforces the same rule. Responses are private and
+uncached. Ordinary readers retain public news and their normal member feeds.
+Category navigation and live-news filters now use saved backend category names
+and IDs, including custom categories, instead of a separate hardcoded directory.
+Backend `configure_news_sources` installs missing standard topics and the checked
+source catalogue without changing existing admin edits; new feeds start disabled.
 
 The new browser suite runs against a fresh temporary SQLite Django database, with
 explicit test-only accounts. It never uses the configured `.env` database:
@@ -283,3 +314,7 @@ a same-origin server proxy. Configure backend SMTP and a trusted
 Tokens expire after one hour and are single use. Password changes revoke existing
 JWT access and refresh tokens. Deploying this token check requires existing
 readers to sign in again. No account passwords or API keys belong in frontend env.
+
+## Public readiness
+
+The companion backend `docs/public-readiness.md` records the end-to-end review and required production configuration. Passing local checks does not replace deploying the updated API/worker, rotating any legacy seeded administrator credential, and verifying writing, recovery and optional Google sign-in services.

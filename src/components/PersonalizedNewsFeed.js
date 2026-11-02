@@ -18,6 +18,8 @@ export default function PersonalizedNewsFeed() {
           )}
         </span>
         <div className="flex flex-wrap items-center gap-3">
+          <Link href="/feed/preferences" className="font-semibold underline underline-offset-4">Manage publishers</Link>
+          <Link href="/stories" className="font-semibold underline underline-offset-4">Follow a developing story</Link>
           <Link
             href="/topics?manage=1#followed-categories"
             className="inline-flex items-center gap-1 font-semibold underline underline-offset-4 hover:text-muted-foreground"

@@ -19,6 +19,7 @@ export default function TopNews() {
   const { t } = useLanguage();
   const country = useCountry();
   const [news, setNews] = useState([]);
+  const [edition, setEdition] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
@@ -26,19 +27,29 @@ export default function TopNews() {
     if (!country) return;
     const controller = new AbortController();
     setLoading(true);
-    const url = buildApiUrl(`/news/?page_size=6&location=${country}`);
+    setEdition(null);
+    const url = buildApiUrl(`/edition/?location=${country}`);
     if (!url) {
       setError("The news service is not configured.");
       setLoading(false);
       return;
     }
     fetch(url, { signal: controller.signal })
-      .then((res) => {
+      .then(async (res) => {
+        // Allow a preview frontend to run against the previous API during rollout.
+        if (res.status === 404) {
+          const previous = await fetch(buildApiUrl(`/news/?page_size=6&location=${country}`), { signal: controller.signal });
+          if (!previous.ok) throw new Error();
+          return { legacy: await previous.json() };
+        }
         if (!res.ok) throw new Error();
         return res.json();
       })
       .then((data) => {
-        setNews(listItems(data));
+        if (controller.signal.aborted) return;
+        const legacy = data.legacy || (Array.isArray(data.results) ? data : null);
+        setEdition(legacy ? null : data);
+        setNews(legacy ? listItems(legacy) : [...(data.lead || []), ...(data.supporting || []), ...(data.feature || [])]);
         setError("");
       })
       .catch((err) => {
@@ -88,8 +99,8 @@ export default function TopNews() {
       </section>
     );
   const [lead, ...others] = regionalNews;
-  const supporting = others.slice(0, 3);
-  const features = others.slice(3, 5);
+  const supporting = edition ? (edition.supporting || []).filter(article => articleMatchesCountry(article, country)) : others.slice(0, 3);
+  const features = edition ? (edition.feature || []).filter(article => articleMatchesCountry(article, country)) : others.slice(3, 5);
   const category = (story) => story.categories?.[0]?.name || "News";
   const storyMeta = (story) => (
     <p className="story-meta">
@@ -106,7 +117,7 @@ export default function TopNews() {
       </div>
       <div className={`briefing-grid ${!supporting.length ? "briefing-grid-single" : ""}`}>
         <article className="lead-story min-w-0">
-          <p className="story-byline"><span className="desk-mark" aria-hidden="true">A</span>{lead.source?.name || "AbokiNews"}<span className="text-muted-foreground font-normal"> / Reporting</span></p>
+          <p className="story-byline"><span className="desk-mark" aria-hidden="true">A</span><Link href={`/sources/${lead.source?.id}`}>{lead.source?.name || "AbokiNews"}</Link><span className="text-muted-foreground font-normal"> / {lead.editorial_type || "Reporting"}</span></p>
           <Link href={`/news/${lead.id}`} className="story-headline-link">
             <h3 className="lead-headline">{lead.title}</h3>
           </Link>
@@ -117,6 +128,8 @@ export default function TopNews() {
               className="lead-photo w-full aspect-[16/10] rounded-md" />
           </Link>
           <p className="lead-description">{lead.description}</p>
+          {lead.why_matters && <div className="context-note"><h4>Why this matters</h4><p>{lead.why_matters}</p><Link className="text-link" href={`/news/${lead.id}`}>Read the context and evidence ↗</Link></div>}
+          {lead.developing_story && <Link className="text-link" href={`/stories/${lead.developing_story.id}`}>Follow this story’s developments ↗</Link>}
         </article>
         {supporting.length > 0 && <div className="supporting-stories">
           {supporting.map((item) => (
@@ -150,6 +163,8 @@ export default function TopNews() {
           </article>
         ))}
       </div>}
+      {edition?.latest?.length > 0 && <section className="edition-latest"><h3>Latest in your edition</h3><ol>{edition.latest.filter(article => articleMatchesCountry(article, country)).map(article => <li key={article.id}><time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time><Link href={`/news/${article.id}`}>{article.title}</Link></li>)}</ol></section>}
+      {(edition?.sections || []).map((section, index) => <section className="edition-category" key={`${section.category}-${index}`}><div className="editorial-section-heading"><h3>{section.title}</h3><Link href={`/categories/${section.category}`}>All {section.category_name} ↗</Link></div><div className="edition-category-grid">{(section.articles || []).filter(article => articleMatchesCountry(article, country)).map(article => <article key={article.id}><p className="editorial-eyebrow">{article.source?.name} · {article.editorial_type || "news"}</p><Link href={`/news/${article.id}`}><h4>{article.title}</h4></Link><p>{article.description}</p></article>)}</div>{!section.articles?.length && <p>No published reports in this section yet.</p>}</section>)}
     </section>
   );
 }

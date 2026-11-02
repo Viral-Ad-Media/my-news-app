@@ -29,9 +29,11 @@ export default function NewsList({
 }) {
   const country = useCountry();
   const [page, setPage] = useState(1);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => { const update = () => { setPage(1); setRevision(v => v + 1); }; window.addEventListener("news-preferences", update); return () => window.removeEventListener("news-preferences", update); }, []);
   const params = new URLSearchParams(query);
   params.set("page", page);
-  const { data, error, loading, updatedAt, refresh } = useNewsStream({ endpoint, query: params.toString(), country, privateFeed, refreshMs });
+  const { data, error, loading, updatedAt, refresh } = useNewsStream({ endpoint, query: params.toString(), country, privateFeed, refreshMs, revision });
   useEffect(() => { setPage(1); }, [query, endpoint, country]);
   const articles = listItems(data).filter(article => articleMatchesCountry(article, country) && withinPublicationWindow(article, params.get("filter")));
   const savedIds = useSavedStories(articles.map((article) => article.id));
@@ -107,6 +109,8 @@ export default function NewsList({
                       {article.source?.name} ·{" "}
                       {formatNewsDate(article.published_at)}
                     </p>
+                    {privateFeed && article.recommendation_reason && <p className="recommendation-reason">Why this story: {article.recommendation_reason}</p>}
+                    {article.developing_story && <Link className="text-link text-sm mb-3" href={`/stories/${article.developing_story.id}`}>Follow developments ↗</Link>}
                     {article.total_sources > 1 &&
                       Array.isArray(article.perspectives) &&
                       article.perspectives.length > 1 &&

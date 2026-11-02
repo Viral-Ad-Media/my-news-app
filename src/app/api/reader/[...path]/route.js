@@ -14,6 +14,8 @@ async function proxy(request, { params }) {
     live: ["GET"],
     saved: ["GET"],
     preferences: ["GET", "PUT"],
+    "reader-choices": ["GET", "PUT"],
+    history: ["GET", "DELETE"],
     ask: ["POST"],
     "superadmin/overview": ["GET"],
     "superadmin/seo/analyze": ["POST"],
@@ -23,7 +25,13 @@ async function proxy(request, { params }) {
   };
   let methods = allowed[path];
   if (!methods) {
-    if (/^saved\/\d+$/.test(path)) {
+    if (/^reader-choices\/(sources|muted_sources|stories)\/\d+$/.test(path)) {
+      methods = ["PUT", "DELETE"];
+    } else if (/^history\/\d+$/.test(path)) {
+      methods = ["PUT"];
+    } else if (/^article-reports\/\d+$/.test(path)) {
+      methods = ["POST"];
+    } else if (/^saved\/\d+$/.test(path)) {
       methods = ["GET", "PUT", "DELETE"];
     } else if (/^superadmin\/articles\/\d+$/.test(path)) {
       methods = ["PUT", "DELETE"];
