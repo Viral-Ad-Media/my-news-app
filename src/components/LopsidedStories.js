@@ -162,7 +162,7 @@ function RoundupArticleCard({ article, featured = false }) {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-0.5 font-semibold text-primary-foreground uppercase tracking-wider">
-                {isAllSides ? "AllSides Roundup" : categoryName}
+                {isAllSides ? "Source roundup" : categoryName}
               </span>
               {isAllSides && categoryName && (
                 <span className="font-semibold text-muted-foreground uppercase tracking-wider">
@@ -300,7 +300,7 @@ function RoundupArticleCard({ article, featured = false }) {
             <span className="text-muted-foreground">
               Curated via{" "}
               <strong className="font-medium text-foreground">
-                {article.source?.name || "AllSides Roundup"}
+                {article.source?.name || "Source roundup"}
               </strong>
             </span>
             <div className="flex flex-wrap items-center gap-4">
@@ -505,7 +505,7 @@ export default function LopsidedStories({ mode = "widget" }) {
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
               <Scale className="h-3.5 w-3.5" aria-hidden="true" />
-              AllSides Spectrum · Framing & Blindspot Radar
+              Coverage archive · Historical framing labels
             </div>
             <h2
               id="lopsided-widget-heading"

@@ -13,7 +13,7 @@ export default function useCategories() {
         do {
           const url = buildApiUrl(`/categories/?page_size=100&page=${page++}`);
           if (!url) throw Error('News service is not configured.');
-          const res = await fetch(url, { signal: controller.signal });
+          const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
           if (!res.ok) throw Error('Unable to load categories. Please reload to retry.');
           data = await res.json(); categories.push(...listItems(data));
         } while (data.next && !controller.signal.aborted);

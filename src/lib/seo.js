@@ -55,6 +55,7 @@ export function articleMetadata(article) {
       title: article.og_title || seo.title,
       description: article.og_description || seo.description,
       publishedTime: article.published_at,
+      ...(article.updated_at ? { modifiedTime: article.updated_at } : {}),
       ...imageEntry(seo.image, article.image_alt),
     },
     twitter: {
@@ -81,6 +82,7 @@ export function articleStructuredData(article) {
     headline: article.title,
     description: seo.description,
     datePublished: article.published_at,
+    ...(article.updated_at ? { dateModified: article.updated_at } : {}),
     mainEntityOfPage: seo.canonical,
     url: seo.url,
     ...(article.article_prepared

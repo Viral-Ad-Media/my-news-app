@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useReadingPreferences } from "./ReadingPreferences";
 import { getArticleFallbackImage, getArticleImageCandidates, isPlaceholderImage, resolveApiAssetUrl } from "../lib/api";
 
 export default function NewsImage({ src, alt, article, className = "", ...props }) {
+  const { lowData, ready } = useReadingPreferences();
   const [failed, setFailed] = useState([]);
   const fallback = getArticleFallbackImage(article || { title: alt });
   const candidates = [...new Set([resolveApiAssetUrl(src), ...getArticleImageCandidates(article)]
@@ -21,6 +23,10 @@ export default function NewsImage({ src, alt, article, className = "", ...props 
     clipper: "NASA’s Europa Clipper spacecraft in a clean room (NASA/JPL-Caltech)",
   };
   const subject = illustrationSubjects[current.split("/").pop()?.replace(".webp", "")] || "Editorial photograph";
+
+  // Wait for browser preferences before mounting an image, so low-data mode
+  // avoids the network request rather than merely hiding a downloaded image.
+  if (!ready || lowData) return <span className={`news-photo news-photo-placeholder ${className}`} aria-hidden="true">{lowData ? "Image hidden · low-data mode" : ""}</span>;
 
   return (
     <span className={`news-photo relative block overflow-hidden ${className}`}>

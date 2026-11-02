@@ -126,50 +126,8 @@ export function normalizeArticleCoverage(article = {}) {
     ? article.perspectives
     : [];
 
-  const sourceName =
-    typeof article.source === "string"
-      ? article.source
-      : article.source?.name || "AllSides Wire";
-  const fallbackUrl = article.article_url || `/news/${article.id || ""}`;
-
-  const perspectives =
-    rawPerspectives.length > 0
-      ? rawPerspectives
-      : [
-          {
-            bucket: "left",
-            label: "From the Left",
-            bias_rating: "Lean Left",
-            source: "Progressive Desk",
-            title: article.title || "Story coverage from left-leaning outlets",
-            summary:
-              article.description ||
-              "Emphasizes public accountability, institutional safeguards, and distributional impact.",
-            url: fallbackUrl,
-          },
-          {
-            bucket: "center",
-            label: "From the Center",
-            bias_rating: "Center",
-            source: sourceName,
-            title: article.title || "Primary wire report",
-            summary:
-              article.description ||
-              "Focuses on verified timeline details, official statements, and procedural context.",
-            url: fallbackUrl,
-          },
-          {
-            bucket: "right",
-            label: "From the Right",
-            bias_rating: "Lean Right",
-            source: "Market & Fiscal Desk",
-            title: article.title || "Story coverage from right-leaning outlets",
-            summary:
-              article.description ||
-              "Highlights fiscal discipline, private-sector growth, and regulatory trade-offs.",
-            url: fallbackUrl,
-          },
-        ];
+  // Missing perspectives stay missing. One article is never three newsrooms.
+  const perspectives = rawPerspectives.filter(item => item && typeof item === "object");
 
   // Extract structured editorial callouts ("The Details:", "For Context:", etc.)
   const paragraphs = String(article.content || article.description || "")
@@ -213,7 +171,6 @@ export function normalizeArticleCoverage(article = {}) {
     perspectives,
     callouts,
     totalSources: Math.max(
-      Number(article.total_sources) || 0,
       perspectives.length,
       1
     ),

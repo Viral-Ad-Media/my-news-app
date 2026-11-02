@@ -9,13 +9,14 @@ test.beforeEach(async ({ page }) => {
  await page.route('**/api/reader/saved-status**', route => route.fulfill({json:{saved_ids:[]}}));
  await page.route('**/api/reader/preferences', route => route.fulfill({json:{categories:[1]}}));
 });
-test('homepage recap and category links lead into the current topic interface', async ({ page }) => {
+test('homepage category links use saved IDs and topic preferences remain available', async ({ page }) => {
  await page.goto('/');
  const ai = page.getByRole('region',{name:'Ask Aboki AI'}), recap = page.getByRole('region',{name:'Briefing Recap'});
  await expect(recap).toBeVisible();
  expect((await recap.boundingBox())!.y).toBeGreaterThan((await ai.boundingBox())!.y);
  await page.locator('.explore-categories').getByRole('link',{name:'Science',exact:true}).click();
- await expect(page).toHaveURL(/topics\?category=Science/);
+ await expect(page).toHaveURL(/categories\/1$/);
+ await page.goto('/topics?category=Science');
  const selected = page.getByRole('navigation',{name:'News categories'}).getByRole('link',{name:'Science',exact:true});
  await expect(selected).toHaveAttribute('aria-current','page');
  await expect(selected).toHaveCSS('background-color','rgb(217, 71, 24)');

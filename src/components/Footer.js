@@ -10,6 +10,8 @@ export default function Footer() {
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <span className="font-bold text-foreground">AbokiNews</span>
+          <Link href="/editorial-policy" className="hover:underline">Editorial approach &amp; corrections</Link>
+          <Link href="/history" className="hover:underline">Reading history</Link>
           <Link href="/feed" className="hover:text-foreground hover:underline">
             {t("nav_feed", "My Feed")}
           </Link>
@@ -49,25 +51,11 @@ export default function Footer() {
           >
             {t("reader_dashboard", "Reader Dashboard")}
           </Link>
-          <Link
-            href="/rss"
-            className="hover:text-foreground hover:underline font-medium"
-          >
-            RSS Feeds
-          </Link>
-          <a
-            href="/rss.xml"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground hover:underline font-mono text-xs"
-          >
-            RSS XML
-          </a>
         </div>
         <p className="text-xs text-muted-foreground">
           {t(
-            "footer_tagline",
-            "Multi-perspective reporting · Left · Center · Right",
+            "footer_context_tagline",
+            "Your country. Clear context. Attributed reporting.",
           )}
         </p>
       </div>

@@ -143,7 +143,7 @@ test("save story gives a pressed state and supports unsaving", async ({
   await expect(save).toHaveAttribute("aria-pressed", "false");
   expect(methods).toEqual(["PUT", "DELETE"]);
 });
-test("lopsided page renders AllSides Left, Center, and Right comparisons without overflow", async ({
+test("coverage archive labels uncertainty and never invents missing perspectives", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -153,9 +153,10 @@ test("lopsided page renders AllSides Left, Center, and Right comparisons without
       name: "Lopsided Coverage & Headline Roundups",
     }),
   ).toBeVisible();
-  await expect(page.getByText("From the Left").first()).toBeVisible();
-  await expect(page.getByText("From the Center").first()).toBeVisible();
-  await expect(page.getByText("From the Right").first()).toBeVisible();
+  await expect(page.getByText("These historic coverage labels are not independently verified bias measurements.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Progressive Desk", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Market & Fiscal Desk", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Bias unrated", { exact: false }).first()).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

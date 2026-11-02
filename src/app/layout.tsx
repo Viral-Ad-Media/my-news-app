@@ -12,14 +12,6 @@ const geistSans = localFont({
 export const metadata: Metadata = {
   title: "AbokiNews",
   description: "News from your country. Read the story, follow the source.",
-  alternates: {
-    types: {
-      "application/rss+xml": [
-        { url: "/rss.xml", title: "AbokiNews — All Stories RSS 2.0 Feed" },
-        { url: "/rss.xml?location=ng", title: "AbokiNews — Nigeria Desk RSS Feed" },
-      ],
-    },
-  },
 };
 
 export default function RootLayout({

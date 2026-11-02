@@ -42,10 +42,11 @@ export default function Header() {
     [t("nav_feed", "My Feed"), "/feed"],
     [t("nav_saved", "Saved News"), "/news/saved"],
     [t("nav_topics", "Topics"), "/topics"],
+    ["Developing stories", "/stories"],
+    ["Publishers", "/sources"],
     [t("nav_local", "Local News"), "/local-news"],
     [t("nav_timelines", "Timelines"), "/timelines"],
     [t("nav_lopsided", "Lopsided"), "/lopsided"],
-    ["RSS", "/rss"],
     ["Live", "/live"],
   ];
 

@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import TopNews from "../components/TopNews";
 import LatestNews from "../components/LatestNews";
-import LopsidedStories from "../components/LopsidedStories";
+import DevelopingStories from "../components/DevelopingStories";
 import HomeHero from "../components/HomeHero";
 
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
         </div>
         <aside aria-label="Explore categories and ask questions" className="editorial-sidebar min-w-0"><Sidebar /></aside>
       </div>
-      <LopsidedStories mode="widget" />
+      <DevelopingStories compact />
       <LatestNews />
       <div className="reader-invitation">
         <div><p className="editorial-eyebrow">Make it your edition</p><h2>The stories you follow. All in one place.</h2><p>Choose your topics, save a story, and come back to what matters.</p></div>

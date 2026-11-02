@@ -63,7 +63,7 @@ export default function StoryCoverage({ apiUrl }) {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
             <Scale className="h-3.5 w-3.5" aria-hidden="true" />
-            AllSides-Style Multi-Perspective Comparison
+            Historical source comparison
           </div>
           <h2
             id="story-perspectives-heading"

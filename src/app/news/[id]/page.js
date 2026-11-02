@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { articleMetadata, articleStructuredData } from "@/lib/seo";
 import ArticleBody from "@/components/ArticleBody";
+import ArticleReaderTools from "@/components/ArticleReaderTools";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +9,8 @@ import Image from "../../../components/NewsImage";
 import SaveStoryButton from "../../../components/SaveStoryButton";
 import { notFound } from "next/navigation";
 import { buildServerApiUrl } from "../../../lib/server-api";
-import LeftSidebar from "../../../components/LeftSidebar";
 import RightSidebar from "../../../components/RightSidebar";
-import StoryCoverage from "../../../components/StoryCoverage";
 import RelatedNews from "../../../components/RelatedNews";
-import CoverageBar from "../../../components/CoverageBar";
 import ArticleTranslator from "../../../components/ArticleTranslator";
 import { formatNewsDate, getArticleImageUrl } from "../../../lib/api";
 
@@ -73,13 +71,8 @@ export default async function NewsDetails({ params }) {
     );
   }
 
-  const hasComparison =
-    Array.isArray(article.perspectives) &&
-    article.perspectives.length > 1 &&
-    article.total_sources > 1;
   const isExplainer =
     Array.isArray(article.tags) && article.tags.includes("explainer");
-  const coverageUrl = buildServerApiUrl(`/news/${articleId}/coverage/`);
   const articleImage = getArticleImageUrl(article);
   const readingMinutes = Math.max(1, Math.ceil(String(article.content || "").split(/\s+/).filter(Boolean).length / 220));
   const paragraphs = String(article.content || article.description || "")
@@ -98,19 +91,7 @@ export default async function NewsDetails({ params }) {
           ),
         }}
       />
-      <div
-        className={
-          hasComparison
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(210px,245px)_minmax(0,1fr)_minmax(220px,260px)] gap-6 items-start"
-            : "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-start max-w-[1200px] mx-auto"
-        }
-      >
-        {hasComparison && (
-          <div className="md:col-span-1 lg:col-span-1 min-w-0 order-2 lg:order-1">
-            <LeftSidebar articleId={articleId} />
-          </div>
-        )}
-
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-start max-w-[1200px] mx-auto">
         <article className="editorial-article md:col-span-2 lg:col-span-1 min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6 lg:p-8 order-1 lg:order-2 break-words">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {Array.isArray(article.categories) &&
@@ -135,7 +116,7 @@ export default async function NewsDetails({ params }) {
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-border text-xs text-muted-foreground">
             <div className="space-y-0.5 min-w-0">
               <div className="font-semibold text-foreground break-words">
-                {article.source?.name || "AbokiNews Desk"}
+                {article.source?.id ? <Link className="hover:underline" href={`/sources/${article.source.id}`}>{article.source.name}</Link> : "AbokiNews Desk"}
                 {article.author ? ` · ${article.article_prepared ? "Source reporting by" : "By"} ${article.author}` : ""}
               </div>
               <div>
@@ -143,6 +124,8 @@ export default async function NewsDetails({ params }) {
                   {formatNewsDate(article.published_at)}
                 </time>
                 <span> · {readingMinutes} min read</span>
+                <span> · {article.editorial_type || "news"}</span>
+                {article.updated_at && <span> · Updated <time dateTime={article.updated_at}>{formatNewsDate(article.updated_at)}</time></span>}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -162,7 +145,7 @@ export default async function NewsDetails({ params }) {
           </div>
 
           {articleImage && (
-            <div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip mb-6 bg-muted/30">
+            <figure className="mb-6"><div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip bg-muted/30">
               <Image
                 article={article}
                 src={articleImage}
@@ -171,13 +154,7 @@ export default async function NewsDetails({ params }) {
                 height={400}
                 className="block w-full h-full object-cover object-center"
               />
-            </div>
-          )}
-
-          {hasComparison && (
-            <div className="mb-5 rounded-lg border border-border bg-muted/30 p-3.5">
-              <CoverageBar article={article} compact={true} />
-            </div>
+            </div>{article.image_credit && <figcaption className="text-xs text-muted-foreground mt-2">Image credit: {article.image_credit}</figcaption>}</figure>
           )}
 
           <div className="mb-5">
@@ -202,10 +179,13 @@ export default async function NewsDetails({ params }) {
             )}
 
           {article.article_prepared && <p className="text-xs text-muted-foreground mb-3">AI-assisted article based on the attributed source report.</p>}
+          {article.why_matters && <section className="context-note mb-6"><h2>Why this matters</h2><p>{article.why_matters}</p>{/^https?:\/\//i.test(article.context_source_url || "") && <a className="text-link" href={article.context_source_url} target="_blank" rel="noopener noreferrer">Supporting context ↗</a>}<p className="text-xs">Editorial context · {article.location?.toUpperCase()}</p></section>}
           <h2 className="text-lg font-bold mb-3">Full Report</h2>
-          <div className="max-w-[72ch]">
+          <div className="article-reading-body">
             <ArticleBody content={article.content || article.description} />
           </div>
+          {article.corrections?.length > 0 && <section className="article-corrections"><h2>Corrections &amp; clarifications</h2>{article.corrections.map(correction => <div key={correction.id}><time dateTime={correction.created_at}>{formatNewsDate(correction.created_at)}</time><p>{correction.note}</p></div>)}</section>}
+          <ArticleReaderTools articleId={article.id} sourceId={article.source?.id} story={article.developing_story} />
 
           {Array.isArray(article.tags) && article.tags.length > 0 && (
             <div className="mt-6 pt-4 border-t border-border">
@@ -226,11 +206,6 @@ export default async function NewsDetails({ params }) {
             </div>
           )}
 
-          {coverageUrl && hasComparison && (
-            <div className="mt-6 pt-4 border-t border-border">
-              <StoryCoverage apiUrl={coverageUrl} />
-            </div>
-          )}
         </article>
 
         <div className="md:col-span-1 lg:col-span-1 min-w-0 order-3">
