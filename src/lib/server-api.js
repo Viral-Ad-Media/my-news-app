@@ -13,6 +13,13 @@ export function sameOrigin(request) {
   const origin = request.headers.get("origin");
   const expected = new URL(request.url);
   if (origin === expected.origin) return true;
+  // Platform requests may carry an internal URL. Bind to the actual Host header,
+  // which browsers cannot choose independently of the destination. Never trust
+  // an arbitrary Origin or caller-supplied x-forwarded-host.
+  if (process.env.VERCEL === "1" && origin) {
+    const host = request.headers.get("host");
+    if (host && origin === `https://${host}`) return true;
+  }
   // Next's dev server normalizes its Request URL to localhost even when the
   // browser uses 127.0.0.1. Keep production strict and match the actual dev Host.
   if (

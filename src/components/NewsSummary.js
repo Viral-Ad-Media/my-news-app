@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
@@ -97,7 +98,7 @@ export default function NewsSummary({
                     href={`/news/${news.id}`}
                     className="text-sm font-medium text-foreground hover:underline underline-offset-4 block leading-snug"
                   >
-                    {news.title}
+                    <LocalizedArticleText articleId={news.id} field="title" original={news.title} />
                   </Link>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {news.summary || news.description}

@@ -1,7 +1,8 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { COUNTRIES, countryName } from "../lib/countries";
+import AdminConfirm from "./AdminConfirm";
 
 export async function editorialRequest(path, method = "GET", body) {
   const res = await fetch(`/api/admin/${path}`, { method, cache: "no-store", signal: AbortSignal.timeout(25000), headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -20,9 +21,13 @@ const defaults = resource => ({
 }[resource]);
 
 export default function EditorialAdmin() {
+  const editorRef = useRef(null);
+  const [deleting, setDeleting] = useState(null);
   const [resource, setResource] = useState("stories"), [data, setData] = useState(null), [page, setPage] = useState(1);
   const [form, setForm] = useState(null), [error, setError] = useState(""), [status, setStatus] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]), [stories, setStories] = useState([]), [canDelete, setCanDelete] = useState(false);
+  const editorOpen = !!form, editorId = form?.id;
+  useEffect(() => { if (editorOpen) editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [editorOpen, editorId]);
   const load = useCallback(async () => {
     setLoading(true);
     try { const result = await editorialRequest(`editorial/${resource}?page=${page}&page_size=20`); setData(result); setError(""); }
@@ -51,19 +56,20 @@ export default function EditorialAdmin() {
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
   async function remove(row) {
-    if (!window.confirm(`Permanently delete this ${labels[resource].toLowerCase()} record?`)) return;
+    setDeleting(null);
     setBusy(true); setError("");
     try { await editorialRequest(`editorial/${resource}/${row.id}`, "DELETE"); setForm(null); await load(); setStatus("Record deleted."); } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
   return <>
+    <AdminConfirm message={deleting ? `Permanently delete this ${labels[resource].toLowerCase()} record?` : ''} busy={busy} onCancel={() => setDeleting(null)} onConfirm={() => remove(deleting)} />
     <header className="editorial-admin-heading"><p className="admin-eyebrow">The editorial desk</p><h1>Shape your edition</h1><p>Choose the lead, connect developing events, and keep a clear record of corrections.</p><Link href="/admin/coverage">Open coverage monitor ↗</Link></header>
-    <nav className="editorial-admin-tabs" aria-label="Editorial tools">{Object.entries(labels).map(([key, label]) => <button key={key} aria-pressed={resource === key} onClick={() => { setResource(key); setPage(1); setForm(null); setError(""); setStatus(""); }}>{label}</button>)}</nav>
+    <nav className="editorial-admin-tabs" aria-label="Editorial tools">{Object.entries(labels).map(([key, label]) => <button key={key} disabled={busy || !!deleting} aria-pressed={resource === key} onClick={() => { setResource(key); setPage(1); setForm(null); setError(""); setStatus(""); }}>{label}</button>)}</nav>
     {error && <p role="alert" className="admin-error">{error}</p>}{status && <p role="status" className="admin-notice">{status}</p>}
     <div className="admin-actions"><h2>{labels[resource]}</h2>{resource !== "reports" && <button onClick={() => setForm(defaults(resource))}>Create {resource === "stories" ? "story" : "record"}</button>}<button disabled={loading || busy} onClick={load}>Refresh</button></div>
     {loading && <p role="status">Loading editorial records…</p>}
-    <div className="admin-table-wrap"><table><thead><tr><th>ID</th><th>Record</th><th>Details</th><th>Actions</th></tr></thead><tbody>{(data?.results || []).map(row => <tr key={row.id}><td>#{row.id}</td><td>{row.title || row.summary || row.note || row.message || `Article #${row.article}`}<br />{row.location && countryName(row.location)}</td><td>{resource === "stories" ? `${row.published ? "Public" : "Draft"} · ${row.report_ids?.length || 0} reports` : resource === "placements" ? `${row.slot} · rank ${row.rank} · until ${new Date(row.ends_at).toLocaleString()}` : resource === "sections" ? `Category #${row.category} · rank ${row.rank} · ${row.enabled ? "Enabled" : "Hidden"}` : resource === "reports" ? `${row.status} · ${new Date(row.created_at).toLocaleString()}` : `Article #${row.article}`}</td><td><button onClick={() => edit(row)}>{resource === "reports" ? "Review" : "Edit"}</button>{resource === "stories" && row.published && <Link href={`/stories/${row.id}`}>Public page ↗</Link>}{canDelete && !["corrections", "reports"].includes(resource) && <button disabled={busy} onClick={() => remove(row)}>Delete</button>}</td></tr>)}</tbody></table>{!loading && !data?.results?.length && <p>No records yet.</p>}</div>
+    <div className="admin-table-wrap"><table><thead><tr><th>ID</th><th>Record</th><th>Details</th><th>Actions</th></tr></thead><tbody>{(data?.results || []).map(row => <tr key={row.id}><td>#{row.id}</td><td>{row.title || row.summary || row.note || row.message || `Article #${row.article}`}<br />{row.location && countryName(row.location)}</td><td>{resource === "stories" ? `${row.published ? "Public" : "Draft"} · ${row.report_ids?.length || 0} reports` : resource === "placements" ? `${row.slot} · rank ${row.rank} · until ${new Date(row.ends_at).toLocaleString()}` : resource === "sections" ? `Category #${row.category} · rank ${row.rank} · ${row.enabled ? "Enabled" : "Hidden"}` : resource === "reports" ? `${row.status} · ${new Date(row.created_at).toLocaleString()}` : `Article #${row.article}`}</td><td><button onClick={() => edit(row)}>{resource === "reports" ? "Review" : "Edit"}</button>{resource === "stories" && row.published && <Link href={`/stories/${row.id}`}>Public page ↗</Link>}{canDelete && !["corrections", "reports"].includes(resource) && <button disabled={busy} onClick={() => setDeleting(row)}>Delete</button>}</td></tr>)}</tbody></table>{!loading && !data?.results?.length && <p>No records yet.</p>}</div>
     <div className="admin-pagination"><button disabled={page === 1 || loading} onClick={() => setPage(v => v - 1)}>Previous</button><span>Page {page} · {data?.count || 0} records</span><button disabled={!data?.next || loading} onClick={() => setPage(v => v + 1)}>Next</button></div>
-    {form && <section className="admin-card editorial-editor"><h2>{form.id ? "Edit" : "Create"} {labels[resource].toLowerCase()}</h2><form onSubmit={save} className="admin-form">
+    {form && <section ref={editorRef} className="admin-card editorial-editor admin-article-editor"><h2>{form.id ? "Edit" : "Create"} {labels[resource].toLowerCase()}</h2><form onSubmit={save} className="admin-form">
       {["stories", "sections"].includes(resource) && input("title", "Title", "text", true)}
       {["stories", "placements", "sections"].includes(resource) && <label>Country edition<select aria-label="Country edition" value={form.location} onChange={e => field("location", e.target.value)}><option value="world">World / mixed countries</option>{COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}</select></label>}
       {resource === "stories" && <>

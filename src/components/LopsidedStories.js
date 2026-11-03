@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -208,12 +209,12 @@ function RoundupArticleCard({ article, featured = false }) {
                     featured ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"
                   } font-bold tracking-tight leading-snug text-balance group-hover:underline underline-offset-4`}
                 >
-                  {article.title}
+                  <LocalizedArticleText articleId={article.id} field="title" original={article.title} />
                 </h3>
               </Link>
 
               <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-muted-foreground">
-                {article.description}
+                <LocalizedArticleText articleId={article.id} field="description" original={article.description} />
               </p>
 
               {/* ABC News-style Key Takeaways / AllSides Details Callouts */}

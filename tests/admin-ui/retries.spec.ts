@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test';
+
+test('staff can inspect exact blockers and retry a failed article without republishing duplicates', async ({ page }) => {
+  test.setTimeout(60000);
+  await page.goto('/admin/login');
+  await page.getByLabel('Username or email').fill('admin-e2e');
+  await page.getByLabel('Password', { exact: true }).fill('test-admin-e2e-only');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  const headers={Origin:'http://127.0.0.1:3216'};
+  const settings=await (await page.request.get('/api/admin/settings')).json();
+  expect((await page.request.put('/api/admin/settings',{headers,data:{revision:settings.revision,publishing_rules:[],enabled:false,publish_per_source:1}})).status()).toBe(200);
+  const response=await page.request.post('/api/admin/sources',{headers,data:{name:'Retry browser source',url:'https://1.1.1.1',location:'ng',enabled:false}});
+  expect(response.status()).toBe(201);
+  const source=await response.json();
+  expect((await page.request.post('http://127.0.0.1:3215/__test__/failed-article/',{data:{source:source.id}})).status()).toBe(200);
+  await page.goto('/admin');
+  await expect(page.getByRole('status').filter({hasText:'quota or balance is exhausted'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Retry failed articles',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Retry failed articles',exact:true}).click();
+  await expect(page.getByRole('status').filter({hasText:'1 failed articles queued for retry'})).toBeVisible();
+  expect((await page.request.post('http://127.0.0.1:3215/__test__/worker/?retry_only=1')).status()).toBe(200);
+  await page.reload();
+  await expect(page.getByRole('status').filter({hasText:'Last request succeeded'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Retry failed articles',exact:true})).toBeDisabled();
+  await page.goto('/admin/logs');
+  const row=page.getByRole('row').filter({hasText:'Recovered browser retry article'});
+  await page.getByRole('combobox',{name:'Retry status',exact:true}).selectOption('published');
+  await expect(row).toContainText('published');
+  await expect(page.getByRole('button',{name:'Previous retries',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Next retries',exact:true})).toBeDisabled();
+  await page.getByRole('combobox',{name:'Retry status',exact:true}).selectOption('blocked');
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button',{name:'Retry failed articles',exact:true}).click();
+  await expect(page.getByRole('status').filter({hasText:'0 failed articles queued for retry'})).toBeVisible();
+  await page.goto('/admin/articles');
+  await expect(page.getByRole('cell',{name:/Recovered browser retry article/})).toHaveCount(1);
+});

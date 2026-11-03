@@ -72,3 +72,31 @@ test('publishing settings persist multiple source rules, interval boundaries and
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await expect(toggle).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
+
+
+
+test('All sources uses the existing settings dropdown and survives reload', async ({ page }) => {
+  await page.goto('/admin/login');
+  await page.getByLabel('Username or email').fill('admin-e2e');
+  await page.getByLabel('Password', { exact: true }).fill('test-admin-e2e-only');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  await page.goto('/admin/settings');
+  const current = await (await page.request.get('/api/admin/settings')).json();
+  for (let i = current.publishing_rules.length; i > 0; i--) await page.getByRole('button', { name: `Remove rule ${i}`, exact: true }).click();
+  await page.getByRole('button', { name: 'Add rule', exact: true }).click();
+  await page.getByLabel('Source 1', { exact: true }).selectOption('0');
+  await page.getByLabel('Category 1', { exact: true }).selectOption('*');
+  await expect(page.getByText('per category, per interval', { exact: true })).toBeVisible();
+  await page.getByLabel('Publish limit 1', { exact: true }).fill('1');
+  await page.getByLabel('Interval minutes', { exact: true }).fill('17');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Changes saved.' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Source 1', { exact: true })).toHaveValue('0');
+  await expect(page.getByLabel('Category 1', { exact: true })).toHaveValue('*');
+  await expect(page.getByLabel('Publish limit 1', { exact: true })).toHaveValue('1');
+  await expect(page.getByText('per category, per interval', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Interval minutes', { exact: true })).toHaveValue('17');
+  await expect(page.getByRole('button', { name: 'Enable all feed sources', exact: true })).toHaveCount(0);
+});

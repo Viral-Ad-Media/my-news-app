@@ -1,6 +1,5 @@
 import { cache } from "react";
 import { articleMetadata, articleStructuredData } from "@/lib/seo";
-import ArticleBody from "@/components/ArticleBody";
 import ArticleReaderTools from "@/components/ArticleReaderTools";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
@@ -11,7 +10,7 @@ import { notFound } from "next/navigation";
 import { buildServerApiUrl } from "../../../lib/server-api";
 import RightSidebar from "../../../components/RightSidebar";
 import RelatedNews from "../../../components/RelatedNews";
-import ArticleTranslator from "../../../components/ArticleTranslator";
+import LocalizedArticleText from "../../../components/LocalizedArticleText";
 import { formatNewsDate, getArticleImageUrl } from "../../../lib/api";
 
 const fetchArticleAndRelatedNews = cache(async function (articleId) {
@@ -75,10 +74,7 @@ export default async function NewsDetails({ params }) {
     Array.isArray(article.tags) && article.tags.includes("explainer");
   const articleImage = getArticleImageUrl(article);
   const readingMinutes = Math.max(1, Math.ceil(String(article.content || "").split(/\s+/).filter(Boolean).length / 220));
-  const paragraphs = String(article.content || article.description || "")
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+
 
   return (
     <div className="w-full min-w-0">
@@ -110,7 +106,7 @@ export default async function NewsDetails({ params }) {
           </div>
 
           <h1 className="fluid-article-title font-bold tracking-tight leading-tight text-balance mb-4">
-            {article.title}
+            <LocalizedArticleText articleId={article.id} field="title" original={article.title} full />
           </h1>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-border text-xs text-muted-foreground">
@@ -157,13 +153,6 @@ export default async function NewsDetails({ params }) {
             </div>{article.image_credit && <figcaption className="text-xs text-muted-foreground mt-2">Image credit: {article.image_credit}</figcaption>}</figure>
           )}
 
-          <div className="mb-5">
-            <ArticleTranslator
-              title={article.title}
-              description={article.description}
-              paragraphs={paragraphs}
-            />
-          </div>
 
           {article.description &&
             article.content &&
@@ -173,16 +162,16 @@ export default async function NewsDetails({ params }) {
                   Key Briefing Summary
                 </p>
                 <p className="text-sm leading-relaxed text-foreground">
-                  {article.description}
+                  <LocalizedArticleText articleId={article.id} field="description" original={article.description} full />
                 </p>
               </div>
             )}
 
           {article.article_prepared && <p className="text-xs text-muted-foreground mb-3">AI-assisted article based on the attributed source report.</p>}
-          {article.why_matters && <section className="context-note mb-6"><h2>Why this matters</h2><p>{article.why_matters}</p>{/^https?:\/\//i.test(article.context_source_url || "") && <a className="text-link" href={article.context_source_url} target="_blank" rel="noopener noreferrer">Supporting context ↗</a>}<p className="text-xs">Editorial context · {article.location?.toUpperCase()}</p></section>}
+          {article.why_matters && <section className="context-note mb-6"><h2>Why this matters</h2><p><LocalizedArticleText articleId={article.id} field="why_matters" original={article.why_matters} full /></p>{/^https?:\/\//i.test(article.context_source_url || "") && <a className="text-link" href={article.context_source_url} target="_blank" rel="noopener noreferrer">Supporting context ↗</a>}<p className="text-xs">Editorial context · {article.location?.toUpperCase()}</p></section>}
           <h2 className="text-lg font-bold mb-3">Full Report</h2>
           <div className="article-reading-body">
-            <ArticleBody content={article.content || article.description} />
+            <LocalizedArticleText articleId={article.id} field="content" original={article.content || article.description} full body />
           </div>
           {article.corrections?.length > 0 && <section className="article-corrections"><h2>Corrections &amp; clarifications</h2>{article.corrections.map(correction => <div key={correction.id}><time dateTime={correction.created_at}>{formatNewsDate(correction.created_at)}</time><p>{correction.note}</p></div>)}</section>}
           <ArticleReaderTools articleId={article.id} sourceId={article.source?.id} story={article.developing_story} />

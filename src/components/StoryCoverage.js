@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 
 import { useEffect, useState } from "react";
 import { ExternalLink, Scale, AlertTriangle } from "lucide-react";
@@ -154,7 +155,7 @@ export default function StoryCoverage({ apiUrl }) {
               className="rounded-lg border border-border bg-background p-3.5 flex flex-wrap items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <h4 className="font-semibold text-sm">{article.title}</h4>
+                <h4 className="font-semibold text-sm"><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {article.source}
                   {article.bias_rating ? ` · ${article.bias_rating}` : ""}

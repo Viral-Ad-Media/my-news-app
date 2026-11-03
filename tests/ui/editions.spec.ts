@@ -62,8 +62,8 @@ test("orange login, cream AI panel and source-card replacement are visible", asy
   await expect(ai).toHaveCSS("background-color", "rgb(246, 240, 227)");
   expect((await ai.boundingBox())!.y).toBeLessThan((await page.locator(".lead-photo").boundingBox())!.y);
   const refinery = page.locator(".supporting-story").filter({ hasText: "Refinery aviation fixture" });
-  await expect(refinery.locator("img")).toHaveAttribute("src", /refinery.webp/);
-  await expect(refinery.getByText("Illustrative photo")).toBeVisible();
+  await expect(refinery.locator("img")).toHaveAttribute("src", /\/api\/news-illustration\?story=article-205&topic=business&/);
+  await expect(refinery.getByText("Topic illustration")).toBeVisible();
   expect(generatedCardRequests).toBe(0);
   let submitted: any;
   await page.route("**/api/reader/ask", route => { submitted = route.request().postDataJSON(); return route.fulfill({ json: { answer: "US fixture answer", sources: [] } }); });
