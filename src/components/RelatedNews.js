@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 
 import useCountry from "../lib/use-country";
 import { articleMatchesCountry } from "../lib/countries";
@@ -63,7 +64,7 @@ export default function RelatedNews({ articles }) {
                   href={`/news/${news.id}`}
                   className="hover:underline underline-offset-4"
                 >
-                  {news.title}
+                  <LocalizedArticleText articleId={news.id} field="title" original={news.title} />
                 </Link>
               </h3>
             </div>

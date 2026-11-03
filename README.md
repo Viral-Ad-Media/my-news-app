@@ -1,5 +1,49 @@
 # AbokiNews Frontend
 
+The existing Dashboard, Articles and Sources layouts are retained. Settings has
+an **All sources** option in the existing publishing-rule selector. Sources has
+**Enable all / Disable all → Apply**. Create/Edit scrolls to and focuses the
+existing editor without delayed cursor changes.
+
+The language selector automatically translates public headlines, summaries and
+full reports through the backend. Keep `OPENAI_API_KEY` on the backend/worker;
+no frontend secret is required. Deploy backend migrations through **0025** and
+restart the worker before deploying this frontend. See backend
+`docs/on-demand-publishing.md` for the worker compatibility fix and deployment notes.
+
+## Publishing retries
+
+Temporary publication failures retry automatically with increasing delays. The
+Dashboard and Logs offer **Retry failed articles**; Logs includes status filters,
+pagination, attempt counts, next retry and the exact blocker. Skipped duplicates,
+category mismatches and full quotas are shown separately from failed articles.
+Writing-service status reflects observed credential/balance/rate/outage responses
+and the last successful article request, without exposing keys or adding probes.
+
+The worker commits each article before starting another. Feed full text is
+preferred when sufficient, and short-lived feed caching avoids repeated RSS
+requests across those batches. Existing category quantities, duplicate checks,
+source evidence requirements and admin layouts remain in place. Deploy backend
+migration **0025** and the updated worker before this frontend. Details are in
+backend `docs/on-demand-publishing.md`.
+
+## Worker recovery and news images
+
+The worker container runs `worker_supervisor.py`, retaining the configured Vercel
+instance. It restarts a crashed child and replaces a stalled worker after 15
+minutes without loop progress, waiting for the prior child to exit first. This
+keeps polling independent of open admin tabs. The saved automation switch governs
+scheduled jobs; the process stays available while paused so it can see later
+changes. Apply backend migrations through 0025 before deploying the worker.
+
+Source photographs remain preferred. Shared local stock fallbacks and legacy
+placeholder cards are rejected everywhere `NewsImage` is used. Missing or failed
+photos use `/api/news-illustration`: a distinct, labelled topic illustration keyed
+by article ID, category and title. Different article IDs never share a fallback
+URL. The selected category takes priority over incidental headline words, and
+there are no external random-photo requests. Low-data mode still avoids loading
+news images. Existing public/admin layouts are retained.
+
 ## Editorial and reader upgrade (November 2, 2026)
 
 New routes: `/stories`, `/stories/[id]`, `/sources`, `/sources/[id]`,

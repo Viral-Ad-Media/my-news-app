@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import useCategories from "../lib/use-categories";
@@ -39,7 +40,7 @@ export default function CurrentTopics() {
     {!country ? <p>Choose a country to see its current topics.</p> : loading ? <p role="status">Loading current topics…</p> : !articles.length && !error ? <p>No published stories for this category in your country yet.</p> : <div className="current-topics-grid">{articles.map(article => <article key={article.id} className="current-topic">
       <Link href={`/news/${article.id}`} className="block"><NewsImage article={article} src={getArticleImageUrl(article)} alt={article.image_alt || article.title} width={640} height={360} className="w-full aspect-[16/9] rounded-md" /></Link>
       <p className="stream-category">Category: {article.categories?.map(item => item.name).join(" · ") || "General news"}</p>
-      <h2><Link href={`/news/${article.id}`}>{article.title}</Link></h2>
+      <h2><Link href={`/news/${article.id}`}><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></Link></h2>
       {Array.isArray(article.tags) && article.tags.length > 0 && <p className="topic-subjects">Topics: {article.tags.slice(0, 5).join(" · ")}</p>}
       <p className="text-xs text-muted-foreground mt-3">{article.source?.name || "News desk"} · <time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time></p>
     </article>)}</div>}

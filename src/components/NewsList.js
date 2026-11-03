@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,11 +100,11 @@ export default function NewsList({
                         />
                       )}
                       <h3 className="font-semibold text-base sm:text-lg mt-3 leading-snug text-balance">
-                        {article.title}
+                        <LocalizedArticleText articleId={article.id} field="title" original={article.title} />
                       </h3>
                     </Link>
                     <p className="text-sm my-3 leading-relaxed text-muted-foreground line-clamp-3">
-                      {article.description}
+                      <LocalizedArticleText articleId={article.id} field="description" original={article.description} />
                     </p>
                     <p className="text-xs text-muted-foreground mb-2">
                       {article.source?.name} ·{" "}

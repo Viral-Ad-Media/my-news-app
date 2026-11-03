@@ -1,4 +1,5 @@
 "use client";
+import LocalizedArticleText from "./LocalizedArticleText";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
@@ -119,7 +120,7 @@ export default function TopNews() {
         <article className="lead-story min-w-0">
           <p className="story-byline"><span className="desk-mark" aria-hidden="true">A</span><Link href={`/sources/${lead.source?.id}`}>{lead.source?.name || "AbokiNews"}</Link><span className="text-muted-foreground font-normal"> / {lead.editorial_type || "Reporting"}</span></p>
           <Link href={`/news/${lead.id}`} className="story-headline-link">
-            <h3 className="lead-headline">{lead.title}</h3>
+            <h3 className="lead-headline"><LocalizedArticleText articleId={lead.id} field="title" original={lead.title} /></h3>
           </Link>
           {storyMeta(lead)}
           <Link href={`/news/${lead.id}`} className="block" aria-label={`Read: ${lead.title}`}>
@@ -127,7 +128,7 @@ export default function TopNews() {
               width={1000} height={620} priority sizes="(max-width: 767px) 100vw, 55vw"
               className="lead-photo w-full aspect-[16/10] rounded-md" />
           </Link>
-          <p className="lead-description">{lead.description}</p>
+          <p className="lead-description"><LocalizedArticleText articleId={lead.id} field="description" original={lead.description} /></p>
           {lead.why_matters && <div className="context-note"><h4>Why this matters</h4><p>{lead.why_matters}</p><Link className="text-link" href={`/news/${lead.id}`}>Read the context and evidence ↗</Link></div>}
           {lead.developing_story && <Link className="text-link" href={`/stories/${lead.developing_story.id}`}>Follow this story’s developments ↗</Link>}
         </article>
@@ -135,8 +136,8 @@ export default function TopNews() {
           {supporting.map((item) => (
             <article key={item.id} className="supporting-story">
               <div className="min-w-0">
-                <Link href={`/news/${item.id}`} className="story-headline-link"><h3>{item.title}</h3></Link>
-                <p className="supporting-description">{item.description}</p>
+                <Link href={`/news/${item.id}`} className="story-headline-link"><h3><LocalizedArticleText articleId={item.id} field="title" original={item.title} /></h3></Link>
+                <p className="supporting-description"><LocalizedArticleText articleId={item.id} field="description" original={item.description} /></p>
                 {storyMeta(item)}
               </div>
               <Link href={`/news/${item.id}`} aria-label={`Read: ${item.title}`}>
@@ -157,14 +158,14 @@ export default function TopNews() {
                 className="w-full aspect-[16/9]" />
               <div className="feature-story-copy">
                 {storyMeta(item)}
-                <h3>{item.title}</h3>
+                <h3><LocalizedArticleText articleId={item.id} field="title" original={item.title} /></h3>
               </div>
             </Link>
           </article>
         ))}
       </div>}
-      {edition?.latest?.length > 0 && <section className="edition-latest"><h3>Latest in your edition</h3><ol>{edition.latest.filter(article => articleMatchesCountry(article, country)).map(article => <li key={article.id}><time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time><Link href={`/news/${article.id}`}>{article.title}</Link></li>)}</ol></section>}
-      {(edition?.sections || []).map((section, index) => <section className="edition-category" key={`${section.category}-${index}`}><div className="editorial-section-heading"><h3>{section.title}</h3><Link href={`/categories/${section.category}`}>All {section.category_name} ↗</Link></div><div className="edition-category-grid">{(section.articles || []).filter(article => articleMatchesCountry(article, country)).map(article => <article key={article.id}><p className="editorial-eyebrow">{article.source?.name} · {article.editorial_type || "news"}</p><Link href={`/news/${article.id}`}><h4>{article.title}</h4></Link><p>{article.description}</p></article>)}</div>{!section.articles?.length && <p>No published reports in this section yet.</p>}</section>)}
+      {edition?.latest?.length > 0 && <section className="edition-latest"><h3>Latest in your edition</h3><ol>{edition.latest.filter(article => articleMatchesCountry(article, country)).map(article => <li key={article.id}><time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time><Link href={`/news/${article.id}`}><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></Link></li>)}</ol></section>}
+      {(edition?.sections || []).map((section, index) => <section className="edition-category" key={`${section.category}-${index}`}><div className="editorial-section-heading"><h3>{section.title}</h3><Link href={`/categories/${section.category}`}>All {section.category_name} ↗</Link></div><div className="edition-category-grid">{(section.articles || []).filter(article => articleMatchesCountry(article, country)).map(article => <article key={article.id}><p className="editorial-eyebrow">{article.source?.name} · {article.editorial_type || "news"}</p><Link href={`/news/${article.id}`}><h4><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></h4></Link><p><LocalizedArticleText articleId={article.id} field="description" original={article.description} /></p></article>)}</div>{!section.articles?.length && <p>No published reports in this section yet.</p>}</section>)}
     </section>
   );
 }

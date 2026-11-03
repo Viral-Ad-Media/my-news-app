@@ -220,7 +220,7 @@ test("public article renders saved search/social metadata, robots, schema and re
     page.getByRole("heading", { name: "Solar power choices" }),
   ).toBeVisible();
   await expect(page.locator("article img")).toHaveCount(1);
-  await expect(page.getByText("Illustrative photo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Topic illustration", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "How Left, Center & Right Covered This Story",

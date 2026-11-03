@@ -119,31 +119,44 @@ export function resolveApiAssetUrl(path = "") {
   return `${apiOrigin}${normalizedPath}`;
 }
 
-// Local licensed photographs are only illustrations, never evidence of a reported event.
+// Shared stock placeholders are never treated as photographs of a news event.
 export function isPlaceholderImage(value) {
-  return /placeholder|feature1\.webp/i.test(String(value || "")) || /abokinews\/starter\/story-(?:2|1[1-9]|20)(?:\.[a-z0-9]+)?(?:$|[?#])/i.test(String(value || ""));
+  return /placeholder|feature1\.webp|\/images\/editorial\/|\/api\/news-illustration(?:\?|$)/i.test(String(value || "")) || /abokinews\/starter\/story-(?:2|1[1-9]|20)(?:\.[a-z0-9]+)?(?:$|[?#])/i.test(String(value || ""));
+}
+
+export function getArticleImageTopic(article = {}) {
+  const categories = (Array.isArray(article.categories) ? article.categories : []).map(c => String(c?.name || c || '')).join(' ').toLowerCase();
+  const patterns = [
+    ['sport', /\b(sport|sports|football|soccer|basketball|tennis|olympic|league)\b/],
+    ['entertainment', /\b(entertainment|film|movie|music|concert|celebrity|cinema|television)\b/],
+    ['culture', /\b(culture|art|arts|literature|heritage|theatre|theater)\b/],
+    ['health', /\b(health|medical|hospital|medicine|vaccine|doctor|disease)\b/],
+    ['science', /\b(science|space|nasa|astronomy|europa|clipper|telescope)\b/],
+    ['technology', /\b(technology|tech|software|broadband|telecom|internet|ai|network)\b/],
+    ['finance', /\b(finance|financial|banking|currency|inflation|cbn|loan|stock|equities)\b/],
+    ['business', /\b(business|economy|economic|trade|market|investment|refinery|oil|petroleum|fuel)\b/],
+    ['education', /\b(education|school|university|student|teacher|learning)\b/],
+    ['environment', /\b(environment|climate|energy|solar|renewable|electricity|wildlife|conservation)\b/],
+    ['politics', /\b(politics|political|election|parliament|government|president|governor)\b/],
+    ['travel', /\b(travel|tourism|flight|aviation|holiday|tourist)\b/],
+    ['lifestyle', /\b(lifestyle|food|fashion|wellness|family|cooking)\b/],
+    ['world', /\b(world|international|global|diplomacy|foreign)\b/],
+    ['local', /\b(local|community|housing|city|urban|transport)\b/],
+  ];
+  // Prefer the saved editorial category over incidental words in the headline.
+  return patterns.find(([, pattern]) => pattern.test(categories))?.[0]
+    || patterns.find(([, pattern]) => pattern.test(String(article.title || '').toLowerCase()))?.[0] || 'news';
 }
 
 export function getArticleFallbackImage(article = {}) {
-  const text = `${article.title || ""} ${(article.categories || []).map((c) => c.name || c).join(" ")}`.toLowerCase();
-  const topics = [
-    ["refinery", /\b(refinery|petroleum|jet-fuel|jet fuel|aviation|oil|gas|fuel)\b/],
-    ["network", /\b(fiber|fibre|broadband|telecom|network|internet|data centre|data center)\b/],
-    ["clipper", /\b(europa|clipper)\b/],
-    ["space", /\b(nasa|space|webb|telescope|exoplanet|astronomy)\b/],
-    ["electricity", /\b(nerc|discos|meter|metering|grid|electricity)\b/],
-    ["finance", /\b(cbn|reserves|currency|foreign-exchange|inflation|loan|loans)\b/],
-    ["london", /\b(london|manchester|uk treasury|united kingdom)\b/],
-    ["energy", /\b(solar|energy|electricity|renewable|climate|power grid|environment)\b/],
-    ["health", /\b(health|hospital|medical|medicine|doctor|clinic|maternal|disease|vaccine)\b/],
-    ["sport", /\b(sport|sports|football|soccer|basketball|olympic|olympics|league|athlete|tennis)\b/],
-    ["education", /\b(education|school|university|student|students|campus|learning|teacher)\b/],
-    ["business", /\b(technology|tech|digital|software|startup|startups|ai|internet|fiber)\b/],
-    ["business", /\b(business|finance|financial|economy|economic|bank|banking|market|markets|stock|equities|trade|tax|revenue|budget|inflation|investment)\b/],
-    ["world", /\b(world|city|housing|transport|travel|international|infrastructure|urban)\b/],
-  ];
-  const topic = topics.find(([, pattern]) => pattern.test(text))?.[0] || "news";
-  return `/images/editorial/${topic}.webp`;
+  const topic = getArticleImageTopic(article);
+  const identity = String(article.id ?? article.article_url ?? `${article.title || ''}|${article.description || ''}|${article.published_at || ''}|${article.source?.id || article.source?.name || ''}`);
+  // Two independent fingerprints keep ID-less fixtures stable without a global
+  // allocation registry. Real articles always retain their unique database ID.
+  let a = 2166136261, b = 5381;
+  for (const char of identity) { a = Math.imul(a ^ char.codePointAt(0), 16777619) >>> 0; b = (Math.imul(b, 33) ^ char.codePointAt(0)) >>> 0; }
+  const story = article.id != null ? `article-${article.id}` : `story-${a.toString(16)}-${b.toString(16)}`;
+  return `/api/news-illustration?story=${encodeURIComponent(story)}&topic=${topic}&title=${encodeURIComponent(String(article.title || 'News report').slice(0, 180))}`;
 }
 
 export function getArticleImageCandidates(article = {}) {

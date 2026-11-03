@@ -4,7 +4,7 @@ import { readerRequest, sameOrigin, setSession } from '../../../../lib/server-ap
 async function proxy(request, { params }) {
   const { path } = await params;
   const route = path.join('/');
-  if (!/^(me|dashboard|settings|source-coverage|coverage-monitor|editorial\/(stories|placements|sections|updates|corrections|reports)(?:\/\d+)?|preparations|articles(?:\/\d+(?:\/prepare)?)?|categories(?:\/\d+)?|sources(?:\/\d+(?:\/test)?)?|runs(?:\/\d+(?:\/cancel)?)?|logs)$/.test(route))
+  if (!/^(me|dashboard|settings|retries(?:\/retry)?|publishing(?:\/\d+)?|source-coverage|coverage-monitor|editorial\/(stories|placements|sections|updates|corrections|reports)(?:\/\d+)?|preparations|articles(?:\/\d+(?:\/prepare)?)?|categories(?:\/\d+)?|sources(?:\/(?:enable-all|disable-all|\d+(?:\/test)?))?|runs(?:\/\d+(?:\/cancel)?)?|logs)$/.test(route))
     return NextResponse.json({ detail: 'Not found' }, { status: 404 });
   if (request.method !== 'GET' && !sameOrigin(request))
     return NextResponse.json({ detail: 'Invalid origin' }, { status: 403 });
