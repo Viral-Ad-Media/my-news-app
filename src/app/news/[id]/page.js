@@ -119,6 +119,7 @@ export default async function NewsDetails({ params }) {
                 <time dateTime={article.published_at}>
                   {formatNewsDate(article.published_at)}
                 </time>
+                {article.source_published_at && <span> · Source report: <time dateTime={article.source_published_at}>{formatNewsDate(article.source_published_at)}</time></span>}
                 <span> · {readingMinutes} min read</span>
                 <span> · {article.editorial_type || "news"}</span>
                 {article.updated_at && <span> · Updated <time dateTime={article.updated_at}>{formatNewsDate(article.updated_at)}</time></span>}
@@ -140,9 +141,9 @@ export default async function NewsDetails({ params }) {
             </div>
           </div>
 
-          {articleImage && (
+          {(
             <figure className="mb-6"><div className="w-full h-[240px] sm:h-[340px] lg:h-[400px] rounded-lg overflow-clip bg-muted/30">
-              <Image
+              <Image linkCredit
                 article={article}
                 src={articleImage}
                 alt={article.image_alt || article.title}
@@ -150,7 +151,7 @@ export default async function NewsDetails({ params }) {
                 height={400}
                 className="block w-full h-full object-cover object-center"
               />
-            </div>{article.image_credit && <figcaption className="text-xs text-muted-foreground mt-2">Image credit: {article.image_credit}</figcaption>}</figure>
+            </div></figure>
           )}
 
 

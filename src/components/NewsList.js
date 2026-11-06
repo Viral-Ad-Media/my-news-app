@@ -21,14 +21,16 @@ import CoverageBar from "./CoverageBar";
 
 export default function NewsList({
   title = "News",
+  edition = "",
   endpoint = "/news/",
   query = "",
   privateFeed = false,
   saved = false,
-  refreshMs = 0,
+  refreshMs = 60000,
   showCategories = false,
 }) {
-  const country = useCountry();
+  const selectedCountry = useCountry();
+  const country = edition || selectedCountry;
   const [page, setPage] = useState(1);
   const [revision, setRevision] = useState(0);
   useEffect(() => { const update = () => { setPage(1); setRevision(v => v + 1); }; window.addEventListener("news-preferences", update); return () => window.removeEventListener("news-preferences", update); }, []);
@@ -89,7 +91,7 @@ export default function NewsList({
                   <article className="flex h-full flex-col min-w-0">
                     {showCategories && <p className="stream-category">Category: {article.categories?.map(category => category.name).join(" · ") || "General news"}</p>}
                     <Link href={`/news/${article.id}`}>
-                      {getArticleImageUrl(article) && (
+                      {(
                         <NewsImage
                           article={article}
                           src={getArticleImageUrl(article)}
@@ -108,7 +110,7 @@ export default function NewsList({
                     </p>
                     <p className="text-xs text-muted-foreground mb-2">
                       {article.source?.name} ·{" "}
-                      {formatNewsDate(article.published_at)}
+                      <time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time>
                     </p>
                     {privateFeed && article.recommendation_reason && <p className="recommendation-reason">Why this story: {article.recommendation_reason}</p>}
                     {article.developing_story && <Link className="text-link text-sm mb-3" href={`/stories/${article.developing_story.id}`}>Follow developments ↗</Link>}

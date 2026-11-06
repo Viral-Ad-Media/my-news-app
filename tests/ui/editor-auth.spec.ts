@@ -1,3 +1,4 @@
+import { photoFixture } from './photo-fixture';
 import { test, expect } from "@playwright/test";
 
 const entry = {
@@ -22,6 +23,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/reader/**", (r) =>
     r.fulfill({ status: 401, json: { detail: "Please sign in" } }),
   );
+  await photoFixture(page);
 });
 
 for (const width of [390, 768, 1440])
@@ -220,7 +222,7 @@ test("public article renders saved search/social metadata, robots, schema and re
     page.getByRole("heading", { name: "Solar power choices" }),
   ).toBeVisible();
   await expect(page.locator("article img")).toHaveCount(1);
-  await expect(page.getByText("Topic illustration", { exact: true })).toBeVisible();
+  await expect(page.getByText("Illustrative photo", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
       name: "How Left, Center & Right Covered This Story",

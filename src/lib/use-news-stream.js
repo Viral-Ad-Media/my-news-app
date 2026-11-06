@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { sharedJSON } from "./shared-json";
 import { buildApiUrl } from "./api";
 
 // Poll the published-news API without overlapping requests or polling hidden tabs.
@@ -26,17 +27,10 @@ export default function useNewsStream({ endpoint = "/news/", query = "", country
       clearTimeout(timer);
       setState(previous => previous.key === key ? { ...previous, error: "", loading: !previous.data } : { key, loading: true });
       try {
-        const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
-        if (controller.signal.aborted) return;
-        if (response.status === 401 || response.status === 403) {
-          unauthorized = true;
-          setState({ key, loading: false, error: "Please login to view this feed." });
-          return;
-        }
-        if (!response.ok) throw new Error("Unable to load stories. Please try again.");
-        const data = await response.json();
+        const data = await sharedJSON(url, { privateFeed, force: retry > 0 });
         if (!controller.signal.aborted) setState({ key, data, loading: false, error: "", updatedAt: new Date().toISOString() });
       } catch (error) {
+        if ([401,403].includes(error.status)) unauthorized = true;
         if (error.name !== "AbortError" && !controller.signal.aborted) setState(previous => ({ ...(previous.key === key ? previous : {}), key, loading: false, error: error.message }));
       } finally {
         pending = false;
@@ -47,9 +41,11 @@ export default function useNewsStream({ endpoint = "/news/", query = "", country
       clearTimeout(timer);
       if (!document.hidden && !unauthorized) load();
     }
+    function sessionChanged() { if (privateFeed) setRetry(value => value + 1); }
+    if (privateFeed) window.addEventListener('news-session', sessionChanged);
     load();
     if (refreshMs) document.addEventListener("visibilitychange", visibilityChanged);
-    return () => { controller.abort(); clearTimeout(timer); document.removeEventListener("visibilitychange", visibilityChanged); };
+    return () => { controller.abort(); clearTimeout(timer); document.removeEventListener("visibilitychange", visibilityChanged); window.removeEventListener("news-session", sessionChanged); };
   }, [key, endpoint, query, country, privateFeed, enabled, refreshMs, revision, retry]);
   return { ...(state.key === key ? state : { loading: enabled && !!country }), refresh: () => setRetry(value => value + 1) };
 }

@@ -24,7 +24,7 @@ export default function RssDirectory() {
     {!data && !error && <p role="status">Loading saved configuration…</p>}
     {data && <>
       <section className="admin-card"><h2>Country edition</h2>
-        <label htmlFor="rss-edition">Edition</label><select id="rss-edition" aria-label="Edition" value={country} onChange={event => setCountry(event.target.value)}><option value="world">All countries</option>{COUNTRIES.map(item => <option key={item.code} value={item.code}>{item.name}</option>)}</select>
+        <label htmlFor="rss-edition">Edition</label><select id="rss-edition" aria-label="Edition" value={country} onChange={event => setCountry(event.target.value)}><option value="world">All countries</option>{COUNTRIES.filter(country => country.code !== 'world').map(item => <option key={item.code} value={item.code}>{item.name}</option>)}</select>
         <p>{coverage?.configured_sources || 0} configured feeds · {coverage?.enabled_sources || 0} enabled · {coverage?.healthy_sources || 0} with a successful feed check in the last 24 hours.</p>
         {!coverage?.enabled_sources && <p role="status">No enabled country feed. Enable a tested source in Sources to populate this edition.</p>}
         <p><a href={`/admin/rss.xml${query ? `?${query}` : ''}`} target="_blank" rel="noopener noreferrer">Open edition RSS XML</a></p>

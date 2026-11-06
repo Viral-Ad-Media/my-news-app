@@ -58,7 +58,7 @@ test("guest Live page requires an account without requesting the live feed", asy
   await page.locator(".live-account-gate").getByRole("button", { name: "Login", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
-test("member Live feed refreshes across categories and respects the selected country", async ({ page }) => {
+test("member Live feed shows all publications and supports the selected country filter", async ({ page }) => {
   await page.route("http://news-api.test/api/categories/**", route => route.fulfill({ json: { results: [...story.categories, { id: 9, name: "Entertainment" }, { id: 10, name: "Games" }], count: 3 } }));
   await page.clock.install();
   await page.route("**/api/session", route => route.fulfill({ json: { authenticated: true, username: "Test member" } }));
@@ -70,7 +70,9 @@ test("member Live feed refreshes across categories and respects the selected cou
   });
   await page.goto("/live");
   await expect(page.getByRole("heading", { name: story.title })).toBeVisible();
-  expect(query!.searchParams.get("location")).toBe("us");
+  expect(query!.searchParams.get("location")).toBe("world");
+  await page.getByLabel("Edition", {exact:true}).selectOption("local");
+  await expect.poll(() => query!.searchParams.get("location")).toBe("us");
   expect(query!.searchParams.has("category")).toBe(false);
   await page.clock.fastForward(31000);
   await expect(page.getByRole("heading", { name: "New live fixture" })).toBeVisible();

@@ -25,7 +25,7 @@ async function proxy(request, { params }) {
   };
   let methods = allowed[path];
   if (!methods) {
-    if (/^translations\/\d+$/.test(path)) {
+    if (/^(translations|article-photos)\/\d+$/.test(path)) {
       methods = ["GET"];
     } else if (/^reader-choices\/(sources|muted_sources|stories)\/\d+$/.test(path)) {
       methods = ["PUT", "DELETE"];

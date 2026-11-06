@@ -1,0 +1,8 @@
+.env
+.env.*
+.next-test
+test-results
+playwright-report
+tests
+coverage
+public/images/Placeholder.webp

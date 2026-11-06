@@ -1,6 +1,7 @@
 "use client";
+import { sharedJSON } from "../lib/shared-json";
 import LocalizedArticleText from "./LocalizedArticleText";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import NewsImage from "./NewsImage";
@@ -24,27 +25,25 @@ export default function TopNews() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const previousCountry = useRef(null);
   useEffect(() => {
     if (!country) return;
     const controller = new AbortController();
-    setLoading(true);
-    setEdition(null);
+    if (previousCountry.current !== country) {
+      setLoading(true);
+      setEdition(null);
+      previousCountry.current = country;
+    }
     const url = buildApiUrl(`/edition/?location=${country}`);
     if (!url) {
       setError("The news service is not configured.");
       setLoading(false);
       return;
     }
-    fetch(url, { signal: controller.signal })
-      .then(async (res) => {
-        // Allow a preview frontend to run against the previous API during rollout.
-        if (res.status === 404) {
-          const previous = await fetch(buildApiUrl(`/news/?page_size=6&location=${country}`), { signal: controller.signal });
-          if (!previous.ok) throw new Error();
-          return { legacy: await previous.json() };
-        }
-        if (!res.ok) throw new Error();
-        return res.json();
+    sharedJSON(url)
+      .catch(async error => {
+        if (error.status === 404) return { legacy: await sharedJSON(buildApiUrl(`/news/?page_size=6&location=${country}`)) };
+        throw error;
       })
       .then((data) => {
         if (controller.signal.aborted) return;
@@ -62,6 +61,12 @@ export default function TopNews() {
       });
     return () => controller.abort();
   }, [revision, country]);
+  useEffect(() => {
+    const timer = setInterval(() => { if (!document.hidden) setRevision(value => value + 1); }, 60000);
+    const visible = () => { if (!document.hidden) setRevision(value => value + 1); };
+    document.addEventListener('visibilitychange', visible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
+  }, []);
   if (!country) return <section className="py-8 text-sm text-muted-foreground">Choose a country to see its latest reporting.</section>;
   if (loading)
     return (
@@ -165,7 +170,7 @@ export default function TopNews() {
         ))}
       </div>}
       {edition?.latest?.length > 0 && <section className="edition-latest"><h3>Latest in your edition</h3><ol>{edition.latest.filter(article => articleMatchesCountry(article, country)).map(article => <li key={article.id}><time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time><Link href={`/news/${article.id}`}><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></Link></li>)}</ol></section>}
-      {(edition?.sections || []).map((section, index) => <section className="edition-category" key={`${section.category}-${index}`}><div className="editorial-section-heading"><h3>{section.title}</h3><Link href={`/categories/${section.category}`}>All {section.category_name} ↗</Link></div><div className="edition-category-grid">{(section.articles || []).filter(article => articleMatchesCountry(article, country)).map(article => <article key={article.id}><p className="editorial-eyebrow">{article.source?.name} · {article.editorial_type || "news"}</p><Link href={`/news/${article.id}`}><h4><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></h4></Link><p><LocalizedArticleText articleId={article.id} field="description" original={article.description} /></p></article>)}</div>{!section.articles?.length && <p>No published reports in this section yet.</p>}</section>)}
+      {(edition?.sections || []).map((section, index) => <section className="edition-category" key={`${section.category}-${index}`}><div className="editorial-section-heading"><h3>{section.title}</h3><Link href={`/categories/${section.category}`}>All {section.category_name} ↗</Link></div><div className="edition-category-grid">{(section.articles || []).filter(article => articleMatchesCountry(article, country)).map(article => <article key={article.id}><Link href={`/news/${article.id}`}><NewsImage article={article} src={getArticleImageUrl(article)} alt={article.image_alt || article.title} width={640} height={360} className="w-full aspect-[16/9] rounded-md mb-3" /></Link><p className="editorial-eyebrow">{article.source?.name} · {article.editorial_type || "news"}</p><Link href={`/news/${article.id}`}><h4><LocalizedArticleText articleId={article.id} field="title" original={article.title} /></h4></Link><p><LocalizedArticleText articleId={article.id} field="description" original={article.description} /></p><time dateTime={article.published_at}>{formatNewsDate(article.published_at)}</time></article>)}</div>{!section.articles?.length && <p>No published reports in this section yet.</p>}</section>)}
     </section>
   );
 }

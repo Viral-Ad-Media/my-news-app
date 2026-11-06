@@ -5,40 +5,6 @@ const DEFAULT_CLOUDINARY_CLOUD_NAME =
 
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${DEFAULT_CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-// Cloudinary-hosted editorial images for starter & roundup stories
-// (used automatically when an API environment has not yet synced image fields)
-const CLOUDINARY_STORY_IMAGES_BY_TITLE = {
-  "oyedele calls for public listings of nnpc and nlng": `${CLOUDINARY_BASE}/v1792480242/abokinews/starter/story-1.webp`,
-  "nigerian equities fall as industrial and bank shares retreat": `${CLOUDINARY_BASE}/v1792480243/abokinews/starter/story-2.webp`,
-  "nigeria introduces capital-market development plan through 2036": `${CLOUDINARY_BASE}/v1792480243/abokinews/starter/story-3.webp`,
-  "kano lawmakers reduce spending plan after revenue shortfall": `${CLOUDINARY_BASE}/v1792480244/abokinews/starter/story-4.webp`,
-  "nafdac reports suspected counterfeit-drinks operation in aba": `${CLOUDINARY_BASE}/v1792480245/abokinews/starter/story-5.webp`,
-  "mortgage bank reports housing-finance approvals for 2025": `${CLOUDINARY_BASE}/v1792480245/abokinews/starter/story-6.webp`,
-  "education ministry says recruitment-waiver process remains in force": `${CLOUDINARY_BASE}/v1792480246/abokinews/starter/story-7.webp`,
-  "nitda and naccima announce commercial links for nigerian startups": `${CLOUDINARY_BASE}/v1792480247/abokinews/starter/story-8.webp`,
-  "nasa’s simulated mars crew reaches a year in isolation": `${CLOUDINARY_BASE}/v1792480248/abokinews/starter/story-9.jpg`,
-  "nasa's simulated mars crew reaches a year in isolation": `${CLOUDINARY_BASE}/v1792480248/abokinews/starter/story-9.jpg`,
-  "nasa engineers streamline rocket shock and vibration modelling": `${CLOUDINARY_BASE}/v1792480844/abokinews/starter/story-10.jpg`,
-  "cbn reports foreign-exchange reserves climb to $40.2 billion in october": `${CLOUDINARY_BASE}/v1792483613/abokinews/starter/story-11.webp`,
-  "lagos expands fiber-optic metro duct network by 1,200 kilometers": `${CLOUDINARY_BASE}/v1792483614/abokinews/starter/story-12.webp`,
-  "dangote refinery begins direct aviation jet-fuel supply to regional carriers": `${CLOUDINARY_BASE}/v1792483615/abokinews/starter/story-13.webp`,
-  "nerc orders electricity discos to accelerate prepaid meter rollout before q4 deadline": `${CLOUDINARY_BASE}/v1792483616/abokinews/starter/story-14.webp`,
-  "health ministry launches maternal-care and primary clinic solarization across 18 states": `${CLOUDINARY_BASE}/v1792483616/abokinews/starter/story-15.webp`,
-  "nelfund disburses student institutional upkeep loans to 42 additional public campuses": `${CLOUDINARY_BASE}/v1792483617/abokinews/starter/story-16.webp`,
-  "nasa’s europa clipper completes deep-space instrument calibration ahead of planetary flyby": `${CLOUDINARY_BASE}/v1792483618/abokinews/starter/story-17.webp`,
-  "nasa's europa clipper completes deep-space instrument calibration ahead of planetary flyby": `${CLOUDINARY_BASE}/v1792483618/abokinews/starter/story-17.webp`,
-  "webb telescope maps silicate cloud structures in nearby exoplanet atmosphere": `${CLOUDINARY_BASE}/v1792483619/abokinews/starter/story-18.webp`,
-  "uk treasury outlines green gilt issuance and north sea grid interconnectors for 2027": `${CLOUDINARY_BASE}/v1792483620/abokinews/starter/story-19.webp`,
-  "london and manchester fast-track brownfield urban housing regeneration permits": `${CLOUDINARY_BASE}/v1792483621/abokinews/starter/story-20.webp`,
-  "doj arrests 28 in alleged voter fraud in ca": `${CLOUDINARY_BASE}/v1792480845/abokinews/allsides/roundup-1.png`,
-  "how will trump's endorsement of netanyahu affect israel's election?": `${CLOUDINARY_BASE}/v1792480846/abokinews/allsides/roundup-2.jpg`,
-  "could school voucher programs be a key factor in the texas gubernatorial race?": `${CLOUDINARY_BASE}/v1792480847/abokinews/allsides/roundup-3.webp`,
-  "elon musk pledges spacex shares to every american child in 2027": `${CLOUDINARY_BASE}/v1792480847/abokinews/allsides/roundup-4.webp`,
-  "is casual sex problematic?": `${CLOUDINARY_BASE}/v1792480848/abokinews/allsides/roundup-5.jpg`,
-  "trump waives impending sanctions on russian goods and energy buyers": `${CLOUDINARY_BASE}/v1792480849/abokinews/allsides/roundup-6.webp`,
-  "what's behind the nationwide rioting in france?": `${CLOUDINARY_BASE}/v1792480850/abokinews/allsides/roundup-7.webp`,
-};
-
 export function getApiBaseUrl() {
   const configuredBase =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -148,22 +114,12 @@ export function getArticleImageTopic(article = {}) {
     || patterns.find(([, pattern]) => pattern.test(String(article.title || '').toLowerCase()))?.[0] || 'news';
 }
 
-export function getArticleFallbackImage(article = {}) {
-  const topic = getArticleImageTopic(article);
-  const identity = String(article.id ?? article.article_url ?? `${article.title || ''}|${article.description || ''}|${article.published_at || ''}|${article.source?.id || article.source?.name || ''}`);
-  // Two independent fingerprints keep ID-less fixtures stable without a global
-  // allocation registry. Real articles always retain their unique database ID.
-  let a = 2166136261, b = 5381;
-  for (const char of identity) { a = Math.imul(a ^ char.codePointAt(0), 16777619) >>> 0; b = (Math.imul(b, 33) ^ char.codePointAt(0)) >>> 0; }
-  const story = article.id != null ? `article-${article.id}` : `story-${a.toString(16)}-${b.toString(16)}`;
-  return `/api/news-illustration?story=${encodeURIComponent(story)}&topic=${topic}&title=${encodeURIComponent(String(article.title || 'News report').slice(0, 180))}`;
-}
+export function getArticleFallbackImage() { return ''; }
 
 export function getArticleImageCandidates(article = {}) {
-  const titleKey = String(article.title || "").trim().toLowerCase();
   return [...new Set([
     article.image_url, article.remote_image_url, article.image,
-    article.og_image_url, CLOUDINARY_STORY_IMAGES_BY_TITLE[titleKey],
+    article.og_image_url,
   ].filter((value) => typeof value === "string")
     .map(resolveApiAssetUrl)
     .filter((value) => value && !isPlaceholderImage(value)))];

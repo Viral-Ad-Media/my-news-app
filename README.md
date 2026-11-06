@@ -34,15 +34,19 @@ instance. It restarts a crashed child and replaces a stalled worker after 15
 minutes without loop progress, waiting for the prior child to exit first. This
 keeps polling independent of open admin tabs. The saved automation switch governs
 scheduled jobs; the process stays available while paused so it can see later
-changes. Apply backend migrations through 0025 before deploying the worker.
+changes. Apply backend migrations through 0027 before deploying the worker.
 
-Source photographs remain preferred. Shared local stock fallbacks and legacy
-placeholder cards are rejected everywhere `NewsImage` is used. Missing or failed
-photos use `/api/news-illustration`: a distinct, labelled topic illustration keyed
-by article ID, category and title. Different article IDs never share a fallback
-URL. The selected category takes priority over incidental headline words, and
-there are no external random-photo requests. Low-data mode still avoids loading
-news images. Existing public/admin layouts are retained.
+Source photographs are retained from RSS, embedded feed media and original article
+pages. Legacy generated cards and SVG topic illustrations are removed. The backend
+repairs historical photos and allocates real, attributed topic photographs with a
+unique database assignment, labelled “Illustrative photo.” Temporary provider
+failures retry later. Low-data mode still avoids photo requests.
+
+Imported stories now use their AbokiNews publication time for Latest, Live and
+Last 24 Hours, retaining the original source date separately. Apply backend
+migrations through **0027**, restart the worker, then deploy the frontend. Latest
+and timeline feeds refresh every 30 seconds while visible. Country editions and
+archive rules still apply. See `newsapp-server/docs/on-demand-publishing.md`.
 
 ## Editorial and reader upgrade (November 2, 2026)
 
@@ -362,3 +366,35 @@ readers to sign in again. No account passwords or API keys belong in frontend en
 ## Public readiness
 
 The companion backend `docs/public-readiness.md` records the end-to-end review and required production configuration. Passing local checks does not replace deploying the updated API/worker, rotating any legacy seeded administrator credential, and verifying writing, recovery and optional Google sign-in services.
+
+## Usage optimization and trend discovery
+
+Latest/timeline feeds poll every 60 seconds; Live stays at 30 seconds. Concurrent
+identical reads share a browser request. Admin tabs suspend polling while hidden,
+with faster updates for active jobs. Public news has a short backend/CDN cache,
+invalidated on publication/archive and bounded to 15 seconds at the CDN. Accounts,
+admin and personalized feeds remain private.
+
+Settings includes **Prioritize Google Trends**, enabled by default. The worker
+matches cached Google Trending Now exports from multiple countries to actual
+reports in enabled publisher feeds. It retains category/country rules, quotas,
+source evidence and duplicate checks. Nonmatching/unavailable trends fall back
+to recent source reporting. No Google Trends credential is needed. Deploy backend
+migrations through **0030** and the worker before this frontend. See backend docs
+for verification and normalized usage comparisons.
+
+`npm ci` provides repeatable installs. The deployment ignore script skips only
+verified documentation-only changes since the last successful deployment;
+missing history always builds. Browser test artifacts are excluded from Function
+tracing and CLI deployment inputs.
+
+
+## Publication dates and all-news visibility
+
+The edition selector includes **World / All news**. Live defaults to **All published
+news**, with an optional selected-country filter. Published dates are rendered on
+news, category and report cards as well as full articles. New publication time and
+original source time remain distinct. Worker reports must have a real source or
+unique topic photo; missing/broken photos request background repair, and browser
+retries pause in hidden tabs. Topic photographs retain their illustrative label
+and attribution. Low-data mode remains an explicit reader choice to hide images.
