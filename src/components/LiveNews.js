@@ -13,6 +13,7 @@ export default function LiveNews() {
   const { categories, error: categoriesError } = useCategories();
   const [session, setSession] = useState({ checking: true, user: null, error: "" });
   const [category, setCategory] = useState("");
+  const [allNews, setAllNews] = useState(true);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -34,11 +35,11 @@ export default function LiveNews() {
     return () => { controller.abort(); window.removeEventListener("news-session", check); };
   }, [revision]);
   return <div className="space-y-6">
-    <header className="stream-page-heading"><p className="editorial-eyebrow inline-flex items-center gap-2"><Radio size={14} aria-hidden="true" />The live desk</p><h1>Live news</h1><p>Latest published reporting across every topic and category in your {countryName(country)} edition.</p></header>
+    <header className="stream-page-heading"><p className="editorial-eyebrow inline-flex items-center gap-2"><Radio size={14} aria-hidden="true" />The live desk</p><h1>Live news</h1><p>Every published report across all countries, topics and categories. Choose your edition to narrow the feed.</p></header>
     {session.checking ? <p role="status">Checking your account…</p> : session.error ? <p role="alert">{session.error} <Button variant="outline" onClick={() => setRevision(value => value + 1)}>Retry</Button></p> : !session.user ? <section className="live-account-gate" aria-labelledby="live-account-title"><LockKeyhole size={24} aria-hidden="true" /><p className="editorial-eyebrow">For AbokiNews members</p><h2 id="live-account-title">Sign in to follow the live desk.</h2><p>Keep up with new reporting across all categories. Your account gives you access to the automatically updating news feed.</p><div className="flex flex-wrap gap-3 mt-6"><AuthDialog initialMode="login" className="live-signin">Login</AuthDialog><AuthDialog initialMode="signup">Create account</AuthDialog></div></section> : <>
       {categoriesError && <p role="alert">{categoriesError}</p>}
-      <div className="stream-filter"><label htmlFor="live-category">Category</label><select id="live-category" value={category} onChange={event => setCategory(event.target.value)}><option value="">All categories</option>{categories.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></div>
-      <NewsList title="Live updates" endpoint="/live/" privateFeed refreshMs={30000} showCategories query={category ? `category=${encodeURIComponent(category)}` : ""} />
+      <div className="stream-filter"><label htmlFor="live-edition">Edition</label><select id="live-edition" value={allNews ? "all" : "local"} onChange={event => setAllNews(event.target.value === "all")}><option value="all">All published news</option><option value="local">Your {countryName(country)} edition</option></select><label htmlFor="live-category">Category</label><select id="live-category" value={category} onChange={event => setCategory(event.target.value)}><option value="">All categories</option>{categories.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></div>
+      <NewsList edition={allNews ? "world" : country} title="Live updates" endpoint="/live/" privateFeed refreshMs={30000} showCategories query={category ? `category=${encodeURIComponent(category)}` : ""} />
     </>}
   </div>;
 }

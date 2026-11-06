@@ -456,7 +456,7 @@ html[data-low-data="true"] .editorial-article figure > div { height: 5rem; }
 .feature-story-copy .story-category { color: #fff; }
 .feature-story:hover h3 { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .feature-story .news-photo-label { top: 10px; bottom: auto; z-index: 1; }
-.news-photo-label { position: absolute; bottom: 7px; right: 7px; padding: 3px 6px; font-size: 9px; font-weight: 400; letter-spacing: .015em; line-height: 1.4; color: white; background: rgb(0 0 0 / .7); border-radius: 2px; pointer-events: none; }
+.news-photo-label { position: absolute; top: 7px; bottom: auto; right: 7px; padding: 3px 6px; font-size: 9px; font-weight: 400; letter-spacing: .015em; line-height: 1.4; color: white; background: rgb(0 0 0 / .7); border-radius: 2px; pointer-events: none; }
 .editorial-lower-grid { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 44px; margin-top: 24px; }
 .editorial-sidebar { border-left: 1px solid hsl(var(--border)); padding-left: 28px; padding-top: 26px; }
 .editorial-sidebar > div > section { border-radius: 0; border-width: 0 0 1px; padding: 0 0 28px; background: transparent; }

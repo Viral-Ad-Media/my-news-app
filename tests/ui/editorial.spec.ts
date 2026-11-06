@@ -1,3 +1,4 @@
+import { photoFixture } from './photo-fixture';
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 
@@ -19,6 +20,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("https://photos.test/**", route => route.request().url().endsWith("broken.jpg")
     ? route.fulfill({ status: 404, body: "missing" })
     : route.fulfill({ path: path.join(process.cwd(), "public/images/editorial", new URL(route.request().url()).pathname), contentType: "image/webp" }));
+  await photoFixture(page);
 });
 
 for (const width of [390, 768, 1440]) {
@@ -29,7 +31,7 @@ for (const width of [390, 768, 1440]) {
     await expect(briefing.locator("article")).toHaveCount(6);
     await expect(briefing.locator("img")).toHaveCount(6);
     await expect(briefing.locator("img[src='https://photos.test/health.webp']")).toBeVisible();
-    await expect(briefing.getByText("Topic illustration", { exact: true })).toHaveCount(1);
+    await expect(briefing.getByText("Illustrative photo", { exact: true })).toHaveCount(1);
     await expect.poll(() => briefing.locator("img").evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     // Load offscreen photographs before capturing the entire page.
@@ -45,10 +47,10 @@ for (const width of [390, 768, 1440]) {
   });
 }
 
-test("broken source photo falls back to a unique labelled topic illustration", async ({ page }) => {
+test("broken source photo falls back to a unique labelled topic photograph", async ({ page }) => {
   await page.route("https://photos.test/**", route => route.fulfill({ status: 404, body: "missing" }));
   await page.goto("/");
   const briefing = page.getByRole("region", { name: "Latest briefing" });
-  await expect(briefing.getByText("Topic illustration", { exact: true })).toHaveCount(6);
+  await expect(briefing.getByText("Illustrative photo", { exact: true })).toHaveCount(6);
   await expect.poll(() => briefing.locator("img").evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
 });

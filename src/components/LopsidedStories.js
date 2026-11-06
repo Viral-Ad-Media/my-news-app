@@ -247,7 +247,7 @@ function RoundupArticleCard({ article, featured = false }) {
               )}
             </div>
 
-            {image && (
+            {(
               <div className="md:col-span-4">
                 <NewsImage
                     article={article}

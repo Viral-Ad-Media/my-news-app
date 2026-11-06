@@ -1,4 +1,5 @@
 export const COUNTRIES = [
+  ["world", "World / All news"],
   ["ng", "Nigeria"], ["us", "United States"], ["gb", "United Kingdom"],
   ["ca", "Canada"], ["au", "Australia"], ["nz", "New Zealand"],
   ["gh", "Ghana"], ["ke", "Kenya"], ["za", "South Africa"], ["eg", "Egypt"],
@@ -22,6 +23,7 @@ export function normalizeCountry(value) {
 }
 
 export function countryName(code, language = "en") {
+  if (code === "world") return "World / All news";
   const country = COUNTRIES.find(item => item.code === code);
   if (!country) return "Your country";
   try { return new Intl.DisplayNames([language], { type: "region" }).of(code.toUpperCase()) || country.name; }
@@ -41,6 +43,7 @@ export function inferBrowserCountry(timeZone, language) {
 }
 
 export function articleMatchesCountry(article, code) {
+  if (code === "world") return true;
   const aliases = { ng: ["nigeria"], us: ["usa", "united states", "united states of america"], gb: ["uk", "united kingdom"] };
   const accepted = [code, ...(aliases[code] || []), countryName(code).toLowerCase()];
   return String(article.location || "").toLowerCase().split(/[,;|]/).some(value => accepted.includes(value.trim()));

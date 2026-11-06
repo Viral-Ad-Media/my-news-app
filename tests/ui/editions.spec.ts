@@ -1,3 +1,4 @@
+import { photoFixture } from './photo-fixture';
 import { test, expect } from "@playwright/test";
 
 const stories = [
@@ -14,6 +15,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("http://news-api.test/api/**", route => route.fulfill({ json: { results: route.request().url().includes("categories") ? [] : stories, count: stories.length } }));
   await page.route("**/api/session", route => route.fulfill({ json: { authenticated: false } }));
   await page.route("**/api/reader/**", route => route.fulfill({ json: route.request().url().includes("saved-status") ? { saved_ids: [] } : { results: stories, count: 5 } }));
+  await photoFixture(page);
 });
 
 test("detected US edition is consistent and changing country updates every homepage section", async ({ page }) => {
@@ -28,7 +30,7 @@ test("detected US edition is consistent and changing country updates every homep
   expect(requested.length).toBeGreaterThan(0);
   expect(requested.every(country => country === "us")).toBe(true);
   await page.getByRole("combobox", { name: "Country", exact: true }).click();
-  await expect(page.getByRole("option")).toHaveCount(61);
+  await expect(page.getByRole("option")).toHaveCount(62);
   await page.getByRole("option", { name: "Canada", exact: true }).click();
   await expect(page.locator(".edition-description")).toContainText("Canada");
   await expect(page.getByRole("heading", { name: "Canada regional fixture" }).first()).toBeVisible();
@@ -62,8 +64,8 @@ test("orange login, cream AI panel and source-card replacement are visible", asy
   await expect(ai).toHaveCSS("background-color", "rgb(246, 240, 227)");
   expect((await ai.boundingBox())!.y).toBeLessThan((await page.locator(".lead-photo").boundingBox())!.y);
   const refinery = page.locator(".supporting-story").filter({ hasText: "Refinery aviation fixture" });
-  await expect(refinery.locator("img")).toHaveAttribute("src", /\/api\/news-illustration\?story=article-205&topic=business&/);
-  await expect(refinery.getByText("Topic illustration")).toBeVisible();
+  await expect(refinery.locator("img")).toHaveAttribute("src", /\/test-photos\/205.webp/);
+  await expect(refinery.getByText("Illustrative photo")).toBeVisible();
   expect(generatedCardRequests).toBe(0);
   let submitted: any;
   await page.route("**/api/reader/ask", route => { submitted = route.request().postDataJSON(); return route.fulfill({ json: { answer: "US fixture answer", sources: [] } }); });

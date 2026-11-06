@@ -46,7 +46,7 @@ export default function RelatedNews({ articles }) {
                 />
               </div>
 
-              {getArticleImageUrl(news) && (
+              {(
                 <Link href={`/news/${news.id}`} className="block">
                   <Image
                     article={news}

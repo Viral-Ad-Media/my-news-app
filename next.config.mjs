@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEWS_TEST_INSTANCE === "1" ? ".next-test" : ".next",
+  outputFileTracingExcludes: {
+    '*': ['./tests/**/*', './test-results/**/*', './playwright-report/**/*', './.next-test/**/*'],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
